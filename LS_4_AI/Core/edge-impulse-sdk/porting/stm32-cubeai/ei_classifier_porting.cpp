@@ -32,6 +32,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef EI_C_LINKAGE
+#define EI_C_LINKAGE 1
+#endif
 #include "../ei_classifier_porting.h"
 #ifndef EI_PORTING_STM32_CUBEAI
 #define EI_PORTING_STM32_CUBEAI 1
