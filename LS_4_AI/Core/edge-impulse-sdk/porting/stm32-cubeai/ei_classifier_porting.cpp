@@ -33,6 +33,9 @@
  */
 
 #include "../ei_classifier_porting.h"
+#ifndef EI_PORTING_STM32_CUBEAI
+#define EI_PORTING_STM32_CUBEAI 1
+#endif
 #if EI_PORTING_STM32_CUBEAI == 1
 
 #include "main.h"
