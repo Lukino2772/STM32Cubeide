@@ -53,6 +53,7 @@ RM := rm -rf
 -include Core/edge-impulse-sdk/dsp/dct/subdir.mk
 -include Core/edge-impulse-sdk/dsp/subdir.mk
 -include Core/edge-impulse-sdk/classifier/subdir.mk
+-include Core/edge-impulse-sdk/CMSIS/NN/Source/SoftmaxFunctions/subdir.mk
 -include Core/edge-impulse-sdk/CMSIS/NN/Source/ReshapeFunctions/subdir.mk
 -include Core/edge-impulse-sdk/CMSIS/NN/Source/PoolingFunctions/subdir.mk
 -include Core/edge-impulse-sdk/CMSIS/NN/Source/NNSupportFunctions/subdir.mk
