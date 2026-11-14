@@ -1,7 +1,9 @@
 #include "scope.h"
 #include "lcd.h"
-#include "adc.h"
-#include "tim.h"
+#include "main.h"
+
+extern ADC_HandleTypeDef hadc1;
+extern TIM_HandleTypeDef htim2;
 #include <math.h>
 
 #include <stdio.h>
@@ -38,7 +40,7 @@ static float voltage_pp;
 static float voltage_rms;
 static float frequency;
 
-static uint8_t running = 1;
+static volatile uint8_t capture_done = 0;
 
 /* 5x7 bitmap font */
 static const char font_chars[] =
@@ -239,29 +241,38 @@ static void DrawInterface(void)
 
 static void CaptureSamples(void)
 {
-    HAL_TIM_Base_Stop(&htim2);
+    capture_done = 0;
 
-    /* Allow any current ADC conversion to finish */
-    HAL_Delay(1);
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer,
+                          ADC_BUFFER_SIZE) != HAL_OK)
+        return;
 
-    uint32_t remaining =
-        __HAL_DMA_GET_COUNTER(hadc1.DMA_Handle);
-
-    uint16_t write_position =
-        (uint16_t)((ADC_BUFFER_SIZE - remaining)
-                   % ADC_BUFFER_SIZE);
-
-    uint16_t start =
-        (write_position + ADC_BUFFER_SIZE - GRAPH_W)
-        % ADC_BUFFER_SIZE;
-
-    for (uint16_t i = 0; i < GRAPH_W; i++)
+    if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
     {
-        samples[i] =
-            adc_buffer[(start + i) % ADC_BUFFER_SIZE];
+        HAL_ADC_Stop_DMA(&hadc1);
+        return;
     }
 
-    HAL_TIM_Base_Start(&htim2);
+    uint32_t start_tick = HAL_GetTick();
+    while (!capture_done && (HAL_GetTick() - start_tick) < 100U)
+    {
+        /* DMA completion interrupt sets capture_done. */
+    }
+
+    HAL_TIM_Base_Stop(&htim2);
+    HAL_ADC_Stop_DMA(&hadc1);
+
+    if (!capture_done)
+        return;
+
+    for (uint16_t i = 0; i < ADC_BUFFER_SIZE; i++)
+        samples[i] = adc_buffer[i];
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+    if (hadc->Instance == ADC1)
+        capture_done = 1;
 }
 
 static void CalculateMeasurements(void)
@@ -415,9 +426,10 @@ void Scope_Update(void)
 {
     CaptureSamples();
 
+    if (!capture_done)
+        return;
+
     CalculateMeasurements();
-
     DrawWaveform();
-
     DrawMeasurements();
 }
