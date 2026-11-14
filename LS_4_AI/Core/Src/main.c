@@ -26,7 +26,8 @@
 #include "mpu6050.h"
 #include <stdio.h>
 
-#include "edge-impulse-sdk/classifier/ei_run_classifier_c.h"
+#include "ei_bridge.h"
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,15 +65,7 @@ static void MX_I2C1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static int get_signal_data(size_t offset, size_t length, float *out_ptr)
-{
-    for (size_t i = 0; i < length; i++)
-    {
-        out_ptr[i] = features[offset + i];
-    }
 
-    return 0;
-}
 /* USER CODE END 0 */
 
 /**
@@ -168,24 +161,18 @@ int main(void)
           HAL_Delay(21);
       }
 
-      /* Prepare Edge Impulse signal */
-      signal_t signal;
-      signal.total_length = EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE;
-      signal.get_data = &get_signal_data;
-
-      /* Run AI inference */
-      ei_impulse_result_t result = {0};
-
-      EI_IMPULSE_ERROR status = run_classifier(&signal, &result, false);
+      /* Run Edge Impulse inference through the C-compatible bridge */
+      float sitting = 0.0f;
+      float standing = 0.0f;
+      int status = LS_AI_Classify(features, &sitting, &standing);
 
       char message[128];
 
-      if (status == EI_IMPULSE_OK)
+      if (status == 0)
       {
           snprintf(message, sizeof(message),
                    "Sitting: %.3f | Standing: %.3f\r\n",
-                   result.classification[0].value,
-                   result.classification[1].value);
+                   sitting, standing);
       }
       else
       {
