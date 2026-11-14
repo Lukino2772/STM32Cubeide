@@ -205,38 +205,55 @@ static void DrawInterface(void)
 {
     LCD_FillScreen(C_BG);
 
-    /* Header */
-    LCD_FillRectangle(0, 0, 240, 35, C_PANEL);
+    /* Instrument header */
+    LCD_FillRectangle(0, 0, 240, 34, C_PANEL);
+    LCD_FillRectangle(0, 0, 4, 34, C_CYAN);
+    DrawText(12, 7, "SCOPE", C_TEXT, 2);
+    DrawText(88, 12, "DIGITAL", C_MUTED, 1);
 
-    DrawText(10, 8, "STM32 SCOPE", C_CYAN, 2);
+    /* Channel and acquisition badges */
+    LCD_FillRectangle(174, 7, 56, 20, C_GREEN);
+    DrawText(181, 13, "CH1", C_BG, 1);
 
-    LCD_FillRectangle(188, 10, 42, 16, C_GREEN);
-    DrawText(194, 14, "CH1", C_BG, 1);
-
-    /* Graph title */
-    DrawText(10, 38, "LIVE SIGNAL", C_TEXT, 1);
-    DrawText(170, 38, "PA0 ADC", C_MUTED, 1);
+    /* Waveform section */
+    DrawText(10, 39, "WAVEFORM", C_CYAN, 1);
+    DrawText(164, 39, "PA0 / ADC1", C_MUTED, 1);
 
     DrawGrid();
 
-    /* Measurement panels */
+    /* Graph frame */
+    DrawLine(GRAPH_X - 1, GRAPH_Y - 1,
+             GRAPH_X + GRAPH_W, GRAPH_Y - 1, C_MUTED);
+    DrawLine(GRAPH_X - 1, GRAPH_Y + GRAPH_H,
+             GRAPH_X + GRAPH_W, GRAPH_Y + GRAPH_H, C_MUTED);
+    DrawLine(GRAPH_X - 1, GRAPH_Y - 1,
+             GRAPH_X - 1, GRAPH_Y + GRAPH_H, C_MUTED);
+    DrawLine(GRAPH_X + GRAPH_W, GRAPH_Y - 1,
+             GRAPH_X + GRAPH_W, GRAPH_Y + GRAPH_H, C_MUTED);
+
+    /* Measurement cards */
     LCD_FillRectangle(8, 188, 108, 48, C_PANEL);
     LCD_FillRectangle(124, 188, 108, 48, C_PANEL);
-
     LCD_FillRectangle(8, 242, 108, 48, C_PANEL);
     LCD_FillRectangle(124, 242, 108, 48, C_PANEL);
 
-    DrawText(15, 194, "FREQUENCY", C_CYAN, 1);
-    DrawText(131, 194, "VPP", C_YELLOW, 1);
+    /* Color-coded card accents */
+    LCD_FillRectangle(8, 188, 3, 48, C_CYAN);
+    LCD_FillRectangle(124, 188, 3, 48, C_YELLOW);
+    LCD_FillRectangle(8, 242, 3, 48, C_GREEN);
+    LCD_FillRectangle(124, 242, 3, 48, C_ORANGE);
 
-    DrawText(15, 248, "VRMS", C_CYAN, 1);
-    DrawText(131, 248, "PERIOD", C_YELLOW, 1);
+    DrawText(16, 194, "FREQUENCY", C_CYAN, 1);
+    DrawText(132, 194, "VPP", C_YELLOW, 1);
+    DrawText(16, 248, "AC RMS", C_GREEN, 1);
+    DrawText(132, 248, "PERIOD", C_ORANGE, 1);
 
-    /* Footer */
+    /* Footer: 220 displayed samples at 10 kS/s = 22 ms span */
     LCD_FillRectangle(0, 298, 240, 22, C_PANEL);
-    DrawText(10, 305, "10MS DIV", C_TEXT, 1);
-    DrawText(105, 305, "10KHZ", C_TEXT, 1);
-    DrawText(183, 305, "AUTO", C_GREEN, 1);
+    LCD_FillRectangle(0, 298, 240, 1, C_GRID);
+    DrawText(9, 305, "22MS SPAN", C_TEXT, 1);
+    DrawText(105, 305, "10K S/S", C_CYAN, 1);
+    DrawText(190, 305, "AUTO", C_GREEN, 1);
 }
 
 static void CaptureSamples(void)
