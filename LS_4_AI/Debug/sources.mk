@@ -62,6 +62,7 @@ Core/edge-impulse-sdk/CMSIS/NN/Source/ConvolutionFunctions \
 Core/edge-impulse-sdk/CMSIS/NN/Source/FullyConnectedFunctions \
 Core/edge-impulse-sdk/CMSIS/NN/Source/NNSupportFunctions \
 Core/edge-impulse-sdk/CMSIS/NN/Source/PoolingFunctions \
+Core/edge-impulse-sdk/CMSIS/NN/Source/SoftmaxFunctions \
 Core/edge-impulse-sdk/CMSIS/NN/Source/ReshapeFunctions \
 Core/edge-impulse-sdk/classifier \
 Core/edge-impulse-sdk/dsp/dct \
