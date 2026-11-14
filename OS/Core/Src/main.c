@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
+#include "scope.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,6 +99,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   LCD_Init();
+  Scope_Init();
 
   /* USER CODE END 2 */
 
@@ -108,20 +110,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      LCD_FillScreen(LCD_RED);
-      HAL_Delay(1000);
-
-      LCD_FillScreen(LCD_GREEN);
-      HAL_Delay(1000);
-
-      LCD_FillScreen(LCD_BLUE);
-      HAL_Delay(1000);
-
-      LCD_FillScreen(LCD_WHITE);
-      HAL_Delay(1000);
-
-      LCD_FillScreen(LCD_BLACK);
-      HAL_Delay(1000);
+      Scope_Update();
   }
   /* USER CODE END 3 */
 }
@@ -257,7 +246,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
   {
