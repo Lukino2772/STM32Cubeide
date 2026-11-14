@@ -408,24 +408,40 @@ static void DrawWaveform(void)
 static void DrawMeasurements(void)
 {
     char text[24];
+    uint32_t freq_hz = (uint32_t)(frequency + 0.5f);
+    uint32_t vpp_centi = (uint32_t)(voltage_pp * 100.0f + 0.5f);
+    uint32_t rms_centi = (uint32_t)(voltage_rms * 100.0f + 0.5f);
 
-    snprintf(text, sizeof(text), "%.0f HZ", frequency);
+    /* Use integer formatting: works with newlib-nano even when
+       floating-point printf support is not enabled in CubeIDE. */
+    snprintf(text, sizeof(text), "%lu HZ", (unsigned long)freq_hz);
     LCD_FillRectangle(14, 207, 96, 22, C_PANEL);
     DrawText(15, 210, text, C_TEXT, 1);
 
-    snprintf(text, sizeof(text), "%.2f V", voltage_pp);
+    snprintf(text, sizeof(text), "%lu.%02lu V",
+             (unsigned long)(vpp_centi / 100U),
+             (unsigned long)(vpp_centi % 100U));
     LCD_FillRectangle(130, 207, 96, 22, C_PANEL);
     DrawText(131, 210, text, C_TEXT, 1);
 
-    snprintf(text, sizeof(text), "%.2f V", voltage_rms);
+    snprintf(text, sizeof(text), "%lu.%02lu V",
+             (unsigned long)(rms_centi / 100U),
+             (unsigned long)(rms_centi % 100U));
     LCD_FillRectangle(14, 261, 96, 22, C_PANEL);
     DrawText(15, 264, text, C_TEXT, 1);
 
     if (frequency > 0.1f)
-        snprintf(text, sizeof(text), "%.2f MS",
-                 1000.0f / frequency);
+    {
+        uint32_t period_centi_ms =
+            (uint32_t)(100000.0f / frequency + 0.5f);
+        snprintf(text, sizeof(text), "%lu.%02lu MS",
+                 (unsigned long)(period_centi_ms / 100U),
+                 (unsigned long)(period_centi_ms % 100U));
+    }
     else
+    {
         snprintf(text, sizeof(text), "--- MS");
+    }
 
     LCD_FillRectangle(130, 261, 96, 22, C_PANEL);
     DrawText(131, 264, text, C_TEXT, 1);
