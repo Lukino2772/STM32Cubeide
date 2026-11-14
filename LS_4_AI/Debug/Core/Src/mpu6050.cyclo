@@ -1,0 +1,3 @@
+../Core/Src/mpu6050.c:4:26:MPU6050_WriteRegister	1
+../Core/Src/mpu6050.c:21:19:MPU6050_Init	9
+../Core/Src/mpu6050.c:77:19:MPU6050_ReadAccel	2
