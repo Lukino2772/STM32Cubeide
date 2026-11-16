@@ -116,7 +116,36 @@ int main(void)
       if (gesture != TOUCH_NONE)
       {
         g_last_touch_gesture = gesture;
-        /* Scope controls can consume this event in the next integration step. */
+
+        switch (gesture)
+        {
+          case TOUCH_SWIPE_LEFT:
+            Scope_AdjustValue(-1);
+            break;
+
+          case TOUCH_SWIPE_RIGHT:
+            Scope_AdjustValue(1);
+            break;
+
+          case TOUCH_SWIPE_UP:
+            Scope_ChangeTimebase(1);
+            break;
+
+          case TOUCH_SWIPE_DOWN:
+            Scope_ChangeVoltageScale(1);
+            break;
+
+          case TOUCH_TAP:
+            Scope_TogglePause();
+            break;
+
+          case TOUCH_LONG_PRESS:
+            Scope_AutoSetup();
+            break;
+
+          default:
+            break;
+        }
       }
       Scope_Update();
   }
