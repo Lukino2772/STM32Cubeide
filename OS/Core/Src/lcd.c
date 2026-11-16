@@ -506,3 +506,32 @@ void LCD_FillScreen(uint16_t color)
 {
     LCD_FillRectangle(0, 0, LCD_WIDTH, LCD_HEIGHT, color);
 }
+
+
+/* Stream a complete RGB565 rectangle using one address-window setup.
+ * Pixels are row-major; the rectangle must fit the panel.
+ */
+void LCD_BlitRGB565(uint16_t x, uint16_t y,
+                    uint16_t width, uint16_t height,
+                    const uint16_t *pixels)
+{
+    if (pixels == NULL || width == 0U || height == 0U ||
+        x >= LCD_WIDTH || y >= LCD_HEIGHT ||
+        width > (LCD_WIDTH - x) || height > (LCD_HEIGHT - y))
+        return;
+
+    LCD_Select();
+    LCD_SetWindow(x, y, (uint16_t)(x + width - 1U),
+                  (uint16_t)(y + height - 1U));
+    LCD_RS_DataMode();
+
+    uint32_t count = (uint32_t)width * height;
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        uint16_t color = pixels[i];
+        LCD_Write8((uint8_t)(color >> 8));
+        LCD_Write8((uint8_t)color);
+    }
+
+    LCD_Deselect();
+}
