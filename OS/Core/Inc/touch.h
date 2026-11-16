@@ -24,7 +24,9 @@ typedef struct
 } TouchPoint;
 
 void Touch_Init(void);
+/* Returns 1 when a measurement was taken; point->pressed indicates contact. */
 uint8_t Touch_Read(TouchPoint *point);
+/* Returns one gesture event, then TOUCH_NONE until another gesture occurs. */
 TouchGesture Touch_GetGesture(void);
 
 #endif
