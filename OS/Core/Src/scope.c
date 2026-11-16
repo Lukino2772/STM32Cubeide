@@ -403,6 +403,16 @@ static void DrawWaveform(void)
     for (uint16_t y = 0; y < GRAPH_H; ++y)
     {
         uint16_t *row = &graph_frame[(uint32_t)y * GRAPH_W];
+        uint8_t horizontal_grid = 0U;
+
+        for (uint8_t gy = 0; gy <= 6U; ++gy)
+        {
+            if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U))
+            {
+                horizontal_grid = 1U;
+                break;
+            }
+        }
 
         for (uint16_t x = 0; x < GRAPH_W; ++x)
         {
@@ -418,20 +428,13 @@ static void DrawWaveform(void)
                 }
             }
 
-            for (uint8_t gy = 0; gy <= 6U; ++gy)
-            {
-                if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U) &&
-                    (x & 3U) == 0U)
-                {
-                    color = C_GRID;
-                    break;
-                }
-            }
+            if (horizontal_grid && (x & 3U) == 0U)
+                color = C_GRID;
 
             if (y == GRAPH_H / 2U && (x % 3U) == 0U)
                 color = C_MUTED;
 
-            bool trace;
+            uint8_t trace = 0U;
             if (x == 0U)
             {
                 trace = (y == (uint16_t)wave_y[0]);
