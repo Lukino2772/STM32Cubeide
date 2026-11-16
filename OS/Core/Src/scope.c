@@ -59,6 +59,9 @@ static volatile uint8_t capture_done = 0;
 static uint8_t capture_active = 0;
 static uint32_t capture_start_tick = 0U;
 
+static void Scope_SetSampleRate(uint32_t rate);
+static void DrawFooter(void);
+
 /* 5x7 bitmap font */
 static const char font_chars[] =
 " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.:/-+%";
@@ -181,6 +184,32 @@ static void DrawGrid(void)
     }
     LCD_BlitRGB565(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, graph_frame);
 }
+
+static void DrawFooter(void)
+{
+    char footer[20];
+    uint32_t span_tenths_ms = 2200000UL / sample_rate_hz;
+    uint32_t vdiv_tenths = (uint32_t)(volts_per_div[voltage_scale_index] * 10.0f + 0.5f);
+
+    LCD_FillRectangle(0, 298, 240, 22, C_PANEL);
+    LCD_FillRectangle(0, 298, 240, 1, C_GRID);
+
+    snprintf(footer, sizeof(footer), "%lu.%luMS",
+             (unsigned long)(span_tenths_ms / 10U),
+             (unsigned long)(span_tenths_ms % 10U));
+    DrawText(7, 305, footer, C_TEXT, C_PANEL, 1);
+
+    snprintf(footer, sizeof(footer), "%luK S/S",
+             (unsigned long)(sample_rate_hz / 1000U));
+    DrawText(85, 305, footer, C_CYAN, C_PANEL, 1);
+
+    snprintf(footer, sizeof(footer), "%lu.%luV/DIV",
+             (unsigned long)(vdiv_tenths / 10U),
+             (unsigned long)(vdiv_tenths % 10U));
+    DrawText(158, 305, footer, C_GREEN, C_PANEL, 1);
+}
+
+
 static void DrawInterface(void)
 {
     LCD_FillScreen(C_BG);
@@ -538,6 +567,7 @@ void Scope_ChangeTimebase(int8_t direction)
         next = (int16_t)(sizeof(timebase_rates) / sizeof(timebase_rates[0])) - 1;
     timebase_index = (uint8_t)next;
     Scope_SetSampleRate(timebase_rates[timebase_index]);
+    DrawFooter();
 }
 
 void Scope_ChangeVoltageScale(int8_t direction)
@@ -547,6 +577,7 @@ void Scope_ChangeVoltageScale(int8_t direction)
     if (next >= (int16_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])))
         next = (int16_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])) - 1;
     voltage_scale_index = (uint8_t)next;
+    DrawFooter();
 }
 
 void Scope_Update(void)
