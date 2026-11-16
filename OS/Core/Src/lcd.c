@@ -467,3 +467,38 @@ void LCD_FillScreen(uint16_t color)
 {
     LCD_FillRectangle(0, 0, LCD_WIDTH, LCD_HEIGHT, color);
 }
+
+
+/* Synchronous RGB565 block transfer. The source buffer is host-endian and
+ * row-major. Clipping is handled without changing the source row stride. */
+void LCD_BlitRGB565(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                    const uint16_t *pixels)
+{
+    if (pixels == 0 || width == 0U || height == 0U ||
+        x >= LCD_WIDTH || y >= LCD_HEIGHT)
+        return;
+
+    uint16_t draw_w = width;
+    uint16_t draw_h = height;
+    if (draw_w > (uint16_t)(LCD_WIDTH - x))
+        draw_w = (uint16_t)(LCD_WIDTH - x);
+    if (draw_h > (uint16_t)(LCD_HEIGHT - y))
+        draw_h = (uint16_t)(LCD_HEIGHT - y);
+
+    LCD_Select();
+    LCD_SetWindow(x, y, (uint16_t)(x + draw_w - 1U),
+                  (uint16_t)(y + draw_h - 1U));
+    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_SET);
+
+    for (uint16_t row = 0U; row < draw_h; ++row)
+    {
+        const uint16_t *src = pixels + ((uint32_t)row * width);
+        for (uint16_t col = 0U; col < draw_w; ++col)
+        {
+            const uint16_t pixel = src[col];
+            LCD_Write8((uint8_t)(pixel >> 8));
+            LCD_Write8((uint8_t)pixel);
+        }
+    }
+    LCD_Deselect();
+}
