@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "scope.h"
+#include "graphics_test.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define RUN_GRAPHICS_TEST 1U /* Set to 0 to boot the oscilloscope instead. */
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -99,7 +100,11 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   LCD_Init();
+#if RUN_GRAPHICS_TEST
+  GraphicsTest_Run();
+#else
   Scope_Init();
+#endif
 
   /* USER CODE END 2 */
 
@@ -110,7 +115,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+#if RUN_GRAPHICS_TEST
+      HAL_Delay(1000U); /* Keep benchmark results visible. */
+#else
       Scope_Update();
+#endif
   }
   /* USER CODE END 3 */
 }
