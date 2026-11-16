@@ -51,12 +51,11 @@ Mcu.Pin18=PB13
 Mcu.Pin19=PB14
 Mcu.Pin20=PB15
 Mcu.Pin21=VP_SYS_VS_Systick
-Mcu.Pin17=VP_TIM2_VS_ClockSourceINT
+Mcu.Pin22=VP_TIM2_VS_ClockSourceINT
 Mcu.Pin2=PA2
 Mcu.Pin3=PA3
 Mcu.Pin4=PA4
 Mcu.Pin5=PA5
-Mcu.Pin?
 Mcu.Pin6=PB0
 Mcu.Pin7=PB1
 Mcu.Pin8=PB2
