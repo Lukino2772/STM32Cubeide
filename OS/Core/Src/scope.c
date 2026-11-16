@@ -35,6 +35,9 @@ static uint16_t samples[ADC_BUFFER_SIZE];
 
 /* 220x132 RGB565 graph buffer: 58,080 bytes in the F411's 128 KB SRAM. */
 static uint16_t graph_frame[GRAPH_W * GRAPH_H];
+static int16_t wave_y[GRAPH_W];
+static uint8_t graph_grid_x[GRAPH_W];
+static uint8_t graph_grid_y[GRAPH_H];
 
 static uint16_t sample_min;
 static uint16_t sample_max;
@@ -109,7 +112,7 @@ static void DrawChar(uint16_t x, uint16_t y, char ch,
     uint8_t index = (uint8_t)(p - font_chars);
     uint16_t width = (uint16_t)(6U * scale);
     uint16_t height = (uint16_t)(7U * scale);
-    uint16_t glyph[6U * 7U * 4U];
+    static uint16_t glyph[6U * 7U * 4U];
 
     for (uint16_t py = 0; py < height; ++py)
     {
@@ -138,42 +141,33 @@ static void DrawText(uint16_t x, uint16_t y, const char *str,
     }
 }
 
+static void InitGridMasks(void)
+{
+    memset(graph_grid_x, 0, sizeof(graph_grid_x));
+    memset(graph_grid_y, 0, sizeof(graph_grid_y));
+
+    for (uint8_t i = 0; i <= 10U; ++i)
+        graph_grid_x[(uint16_t)(i * (GRAPH_W - 1U) / 10U)] = 1U;
+    for (uint8_t i = 0; i <= 6U; ++i)
+        graph_grid_y[(uint16_t)(i * (GRAPH_H - 1U) / 6U)] = 1U;
+}
+
 static void DrawGrid(void)
 {
     for (uint16_t y = 0; y < GRAPH_H; ++y)
     {
-        uint8_t horizontal_grid = 0U;
-        for (uint8_t gy = 0; gy <= 6U; ++gy)
-        {
-            if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U))
-            {
-                horizontal_grid = 1U;
-                break;
-            }
-        }
-
         for (uint16_t x = 0; x < GRAPH_W; ++x)
         {
             uint16_t color = C_BG;
-            for (uint8_t gx = 0; gx <= 10U; ++gx)
-            {
-                if (x == (uint16_t)(gx * (GRAPH_W - 1U) / 10U) &&
-                    (y & 3U) == 0U)
-                {
-                    color = C_GRID;
-                    break;
-                }
-            }
-
-            if (horizontal_grid && (x & 3U) == 0U)
+            if (graph_grid_x[x] && (y & 3U) == 0U)
+                color = C_GRID;
+            if (graph_grid_y[y] && (x & 3U) == 0U)
                 color = C_GRID;
             if (y == GRAPH_H / 2U && (x % 3U) == 0U)
                 color = C_MUTED;
-
             graph_frame[(uint32_t)y * GRAPH_W + x] = color;
         }
     }
-
     LCD_BlitRGB565(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, graph_frame);
 }
 static void DrawInterface(void)
@@ -352,7 +346,6 @@ static void DrawWaveform(void)
     if (display_range == 0U)
         display_range = 1U;
 
-    int16_t wave_y[GRAPH_W];
     for (uint16_t x = 0; x < GRAPH_W; ++x)
     {
         int32_t offset = (int32_t)samples[x] - low;
@@ -371,32 +364,13 @@ static void DrawWaveform(void)
     for (uint16_t y = 0; y < GRAPH_H; ++y)
     {
         uint16_t *row = &graph_frame[(uint32_t)y * GRAPH_W];
-        uint8_t horizontal_grid = 0U;
-
-        for (uint8_t gy = 0; gy <= 6U; ++gy)
-        {
-            if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U))
-            {
-                horizontal_grid = 1U;
-                break;
-            }
-        }
-
         for (uint16_t x = 0; x < GRAPH_W; ++x)
         {
             uint16_t color = C_BG;
 
-            for (uint8_t gx = 0; gx <= 10U; ++gx)
-            {
-                if (x == (uint16_t)(gx * (GRAPH_W - 1U) / 10U) &&
-                    (y & 3U) == 0U)
-                {
-                    color = C_GRID;
-                    break;
-                }
-            }
-
-            if (horizontal_grid && (x & 3U) == 0U)
+            if (graph_grid_x[x] && (y & 3U) == 0U)
+                color = C_GRID;
+            if (graph_grid_y[y] && (x & 3U) == 0U)
                 color = C_GRID;
 
             if (y == GRAPH_H / 2U && (x % 3U) == 0U)
@@ -472,6 +446,7 @@ void Scope_Init(void)
 {
     memset(adc_buffer, 0, sizeof(adc_buffer));
     memset(samples, 0, sizeof(samples));
+    InitGridMasks();
 
     DrawInterface();
 }
