@@ -33,6 +33,9 @@ extern TIM_HandleTypeDef htim2;
 static uint16_t adc_buffer[ADC_BUFFER_SIZE];
 static uint16_t samples[ADC_BUFFER_SIZE];
 
+/* 220x132 RGB565 graph buffer: 58,080 bytes in the F411's 128 KB SRAM. */
+static uint16_t graph_frame[GRAPH_W * GRAPH_H];
+
 static uint16_t sample_min;
 static uint16_t sample_max;
 
@@ -364,45 +367,92 @@ static void CalculateMeasurements(void)
 
 static void DrawWaveform(void)
 {
-    DrawGrid();
+    uint16_t range = (uint16_t)(sample_max - sample_min);
+    if (range < 10U)
+        range = 10U;
 
-    uint16_t range = sample_max - sample_min;
-
-    if (range < 10)
-        range = 10;
-
-    uint16_t margin = range / 10;
-
+    int32_t margin = range / 10U;
     int32_t low = (int32_t)sample_min - margin;
     int32_t high = (int32_t)sample_max + margin;
 
     if (low < 0)
         low = 0;
-
     if (high > 4095)
         high = 4095;
 
-    uint32_t display_range = high - low;
+    uint32_t display_range = (uint32_t)(high - low);
+    if (display_range == 0U)
+        display_range = 1U;
 
-    if (display_range == 0)
-        display_range = 1;
-
-    for (uint16_t i = 1; i < GRAPH_W; i++)
+    int16_t wave_y[GRAPH_W];
+    for (uint16_t x = 0; x < GRAPH_W; ++x)
     {
-        int y1 = GRAPH_Y + GRAPH_H - 1 -
-            ((samples[i - 1] - low) * (GRAPH_H - 1)
-             / display_range);
+        int32_t offset = (int32_t)samples[x] - low;
+        int32_t py = (GRAPH_H - 1) -
+            (int32_t)(((uint32_t)offset * (GRAPH_H - 1U)) / display_range);
 
-        int y2 = GRAPH_Y + GRAPH_H - 1 -
-            ((samples[i] - low) * (GRAPH_H - 1)
-             / display_range);
+        if (py < 0)
+            py = 0;
+        else if (py >= GRAPH_H)
+            py = GRAPH_H - 1;
 
-        DrawLine(
-            GRAPH_X + i - 1, y1,
-            GRAPH_X + i, y2,
-            C_GREEN
-        );
+        wave_y[x] = (int16_t)py;
     }
+
+    /* Compose the graph in SRAM, then transfer it with one TFT window. */
+    for (uint16_t y = 0; y < GRAPH_H; ++y)
+    {
+        uint16_t *row = &graph_frame[(uint32_t)y * GRAPH_W];
+
+        for (uint16_t x = 0; x < GRAPH_W; ++x)
+        {
+            uint16_t color = C_BG;
+
+            for (uint8_t gx = 0; gx <= 10U; ++gx)
+            {
+                if (x == (uint16_t)(gx * (GRAPH_W - 1U) / 10U) &&
+                    (y & 3U) == 0U)
+                {
+                    color = C_GRID;
+                    break;
+                }
+            }
+
+            for (uint8_t gy = 0; gy <= 6U; ++gy)
+            {
+                if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U) &&
+                    (x & 3U) == 0U)
+                {
+                    color = C_GRID;
+                    break;
+                }
+            }
+
+            if (y == GRAPH_H / 2U && (x % 3U) == 0U)
+                color = C_MUTED;
+
+            bool trace;
+            if (x == 0U)
+            {
+                trace = (y == (uint16_t)wave_y[0]);
+            }
+            else
+            {
+                int16_t a = wave_y[x - 1U];
+                int16_t b = wave_y[x];
+                int16_t top = (a < b) ? a : b;
+                int16_t bottom = (a > b) ? a : b;
+                trace = ((int16_t)y >= top && (int16_t)y <= bottom);
+            }
+
+            if (trace)
+                color = C_GREEN;
+
+            row[x] = color;
+        }
+    }
+
+    LCD_BlitRGB565(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, graph_frame);
 }
 
 static void DrawMeasurements(void)
