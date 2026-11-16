@@ -117,8 +117,8 @@ static void LCD_Data16(uint16_t data)
     LCD_Data(data & 0xFF);
 }
 
-/* ILI9325/ILI9328 over an 8-bit bus: register index and value are each
-   sent as two bytes (high, low). */
+/* SPFD5408 / ILI9325-compatible register controllers use a 16-bit
+   register index and 16-bit value on the 8-bit parallel bus. */
 static void LCD_Index16(uint16_t reg)
 {
     LCD_Command(reg >> 8);
@@ -161,8 +161,8 @@ static uint8_t LCD_Read8(void)
     return v;
 }
 
-/* Visible in the debugger (Live Expressions): 0x9325 / 0x9328 / 0x9341,
-   anything else (0x0000 / 0xFFFF) means the bus or wiring is not talking. */
+/* Visible in the debugger (Live Expressions): SPFD5408 (0x5408),
+   ILI9325/9328 or ILI9341. 0x0000/0xFFFF usually indicates a bus issue. */
 uint16_t lcd_id = 0;
 static uint8_t lcd_is9325 = 1;
 
@@ -176,7 +176,7 @@ static uint16_t LCD_ReadID(void)
     uint8_t lo = LCD_Read8();
     LCD_BusMode(GPIO_MODE_OUTPUT_PP);
     uint16_t id = ((uint16_t)hi << 8) | lo;
-    if (id == 0x9325 || id == 0x9328)
+    if (id == 0x5408 || id == 0x9325 || id == 0x9328)
         return id;
 
     /* ILI9341: command 0xD3 returns dummy, 0x00, 0x93, 0x41 */
@@ -448,7 +448,8 @@ void LCD_Init(void)
     }
     else
     {
-        /* 0x9325, 0x9328, or unknown: use the ILI9325 sequence */
+        /* SPFD5408, ILI9325/9328, or unknown ID: use the compatible
+           register-controller sequence. */
         lcd_is9325 = 1;
         LCD_ControllerInit9325();
     }
