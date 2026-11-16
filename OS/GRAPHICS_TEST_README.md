@@ -1,53 +1,65 @@
-# OS graphics demo and LCD benchmark
+# STM32F411CEU6 graphics demo integration
 
-This branch adds a hardware-adapted integration of the portable graphics demo
-from [Kutmen69/Peripheral-drivers](https://github.com/Kutmen69/Peripheral-drivers/tree/main/graphics).
-The renderer and demo source files retain their upstream API. The board adapter
-uses this project's existing STM32F411CEU6 8-bit parallel LCD driver and pin map.
+The OS project now uses the current portable graphics code from
+[Kutmen69/Peripheral-drivers/graphics](https://github.com/Kutmen69/Peripheral-drivers/tree/main/graphics).
 
-## Startup selection
+## Hardware adapter
 
-In `Core/Src/main.c`:
+- MCU: STM32F411CEU6 Black Pill.
+- Display: existing 240x320 8-bit parallel TFT implementation in
+  `Core/Src/lcd.c`.
+- The existing LCD driver detects ILI9325/ILI9328 or ILI9341 and owns all
+  GPIO mapping, reset, controller initialization and RGB565 writes.
+- Graphics use `LCD_FillRectangle()`, `LCD_DrawPixel()` and the synchronous
+  host-endian `LCD_BlitRGB565()` callback. No replacement LCD driver,
+  new pin mapping, SPI, DMA or CubeMX peripheral configuration is required.
 
-```c
-#define RUN_GRAPHICS_TEST 1U
-```
+## Imported portable files
 
-- `1`: run the 3D scenes, then the six-stage display benchmark. The benchmark
-  result screen remains visible.
-- `0`: run the original oscilloscope application (`Scope_Init/Scope_Update`).
+`Core/Inc`:
+- `pd_bus.h`
+- `pd_render3d.h`
+- `pd_graphics_demo.h`
+- `pd_graphics_demo_internal.h`
+- `pd_graphics_benchmark.h`
 
-The test sequence displays the cube, pyramid, sphere, torus, helix, saddle,
-ripple, solar system and gyroscope. Each scene runs for approximately 1.4 s;
-actual duration depends on LCD transfer speed. It then benchmarks full-screen
-fills, checkerboard rectangles, color bars, lines, nested rectangles and
-individual pixels.
+`Core/Src`:
+- `pd_render3d.c`
+- `pd_graphics_demo.c`
+- `pd_graphics_solar.c`
+- `pd_graphics_benchmark.c`
 
-## LCD adapter
+The application adapter is `graphics_test.c/.h`. It connects the portable
+callbacks to the already initialized project LCD and HAL tick.
 
-`lcd.c` adds `LCD_BlitRGB565()`, a synchronous RGB565 block write. It reuses
-the existing LCD window and 8-bit parallel bus implementation. The graphics
-adapter uses the existing `LCD_FillRectangle()` and `LCD_DrawPixel()`
-functions; it does not initialize or remap any GPIO pins itself.
+## Memory and performance
 
-The small 5x7 text renderer is included because the benchmark requires a text
-callback. The demo uses a 121-pixel scratch buffer (242 bytes); there is no
-full-screen framebuffer or heap allocation.
+- 121 RGB565 scratch pixels: 242 bytes.
+- 352 cached render commands: roughly 4.2 KiB (compiler-dependent).
+- Demo state and benchmark result structure.
+- No full-screen framebuffer, heap allocation, floating-point math or
+  additional MCU peripherals.
 
-## Build and hardware test
+The animated scenes use the library's 11x11 dirty-tile renderer and blit
+callback. The line callback is used for static grid lines and benchmark
+line tests; diagonal lines use a simple Bresenham reference implementation
+and may be slow. Benchmark timings include the real LCD callback overhead.
 
-1. Checkout this branch and import/refresh the `OS` project in STM32CubeIDE.
-2. Build the Debug configuration.
-3. Flash the STM32F411CEU6 and check that the LCD shows the scenes and then
-   the benchmark results.
-4. Record the six stage times and total time shown on the LCD.
-5. Set `RUN_GRAPHICS_TEST` to `0` to return to the oscilloscope.
+## Startup
 
-This repository integration has not been compiled or run on the physical board
-from this environment. The timings are deliberately measured on the target:
-they include synchronous LCD transfers and callback overhead, not just CPU
-rendering time. A 1 ms HAL tick can report 0 ms for a very short stage.
+In `main.c`, `RUN_GRAPHICS_TEST 1U` runs all 18 scenes in sequence
+(about 1.2 seconds each, actual time depends on LCD speed), then executes
+the six-stage benchmark. The benchmark result screen remains visible.
 
-The upstream repository describes these modules as pre-release and not
-production-validated. Treat the result as a display/graphics experiment, not
-as a safety-qualified component.
+Set `RUN_GRAPHICS_TEST 0U` to start the original oscilloscope instead.
+The existing `LCD_Init()` call must remain before `GraphicsTest_Run()`.
+
+## Build and validation
+
+The new C files are in the existing `Core/Src` and headers in `Core/Inc`.
+Refresh the project in STM32CubeIDE, run **Project → Clean**, then build.
+
+**Not yet verified:** no STM32CubeIDE build or physical STM32F411/TFT run
+has been performed remotely. If compilation fails, send the first complete
+error and its source file/line. After a successful build, verify the LCD
+color output before relying on benchmark numbers.
