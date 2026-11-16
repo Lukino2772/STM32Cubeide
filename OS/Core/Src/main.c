@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "scope.h"
+#include "touch.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -47,7 +48,7 @@ DMA_HandleTypeDef hdma_adc1;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-
+volatile TouchGesture g_last_touch_gesture = TOUCH_NONE;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,6 +100,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   LCD_Init();
+  Touch_Init();
   Scope_Init();
 
   /* USER CODE END 2 */
@@ -110,6 +112,41 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+      TouchGesture gesture = Touch_GetGesture();
+      if (gesture != TOUCH_NONE)
+      {
+        g_last_touch_gesture = gesture;
+
+        switch (gesture)
+        {
+          case TOUCH_SWIPE_LEFT:
+            Scope_AdjustValue(-1);
+            break;
+
+          case TOUCH_SWIPE_RIGHT:
+            Scope_AdjustValue(1);
+            break;
+
+          case TOUCH_SWIPE_UP:
+            Scope_ChangeTimebase(1);
+            break;
+
+          case TOUCH_SWIPE_DOWN:
+            Scope_ChangeVoltageScale(1);
+            break;
+
+          case TOUCH_TAP:
+            Scope_TogglePause();
+            break;
+
+          case TOUCH_LONG_PRESS:
+            Scope_AutoSetup();
+            break;
+
+          default:
+            break;
+        }
+      }
       Scope_Update();
   }
   /* USER CODE END 3 */
@@ -160,6 +197,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
 
 /**
   * @brief ADC1 Initialization Function
