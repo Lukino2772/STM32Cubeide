@@ -1,4 +1,5 @@
 #include "lcd.h"
+#include <stddef.h>
 
 /* Control pins */
 #define LCD_RD_PORT  GPIOA
