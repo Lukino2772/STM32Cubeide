@@ -98,80 +98,43 @@ static const uint8_t font[][5] =
     {0x63,0x13,0x08,0x64,0x63}
 };
 
-static void DrawChar(uint16_t x, uint16_t y,
-                     char ch, uint16_t color, uint8_t scale)
+static void DrawChar(uint16_t x, uint16_t y, char ch,
+                     uint16_t color, uint16_t background, uint8_t scale)
 {
     ch = (char)toupper((unsigned char)ch);
-
     const char *p = strchr(font_chars, ch);
-
-    if (p == NULL)
+    if (p == NULL || scale == 0U || scale > 2U)
         return;
 
     uint8_t index = (uint8_t)(p - font_chars);
+    uint16_t width = (uint16_t)(6U * scale);
+    uint16_t height = (uint16_t)(7U * scale);
+    uint16_t glyph[6U * 7U * 4U];
 
-    for (uint8_t col = 0; col < 5; col++)
+    for (uint16_t py = 0; py < height; ++py)
     {
-        for (uint8_t row = 0; row < 7; row++)
+        uint8_t row = (uint8_t)(py / scale);
+        for (uint16_t px = 0; px < width; ++px)
         {
-            if (font[index][col] & (1U << row))
-            {
-                LCD_FillRectangle(
-                    x + col * scale,
-                    y + row * scale,
-                    scale,
-                    scale,
-                    color
-                );
-            }
+            uint8_t column = (uint8_t)(px / scale);
+            uint8_t set = (column < 5U) &&
+                ((font[index][column] & (1U << row)) != 0U);
+            glyph[(uint32_t)py * width + px] = set ? color : background;
         }
     }
+
+    /* One address-window setup per character, not per lit font pixel. */
+    LCD_BlitRGB565(x, y, width, height, glyph);
 }
 
-static void DrawText(uint16_t x, uint16_t y,
-                     const char *str,
-                     uint16_t color,
-                     uint8_t scale)
+static void DrawText(uint16_t x, uint16_t y, const char *str,
+                     uint16_t color, uint16_t background, uint8_t scale)
 {
     while (*str)
     {
-        DrawChar(x, y, *str, color, scale);
-        x += 6 * scale;
-        str++;
-    }
-}
-
-static void DrawLine(int x0, int y0, int x1, int y1,
-                     uint16_t color)
-{
-    int dx = (x1 > x0) ? x1 - x0 : x0 - x1;
-    int sx = (x0 < x1) ? 1 : -1;
-
-    int dy = (y1 > y0) ? y0 - y1 : y1 - y0;
-    int sy = (y0 < y1) ? 1 : -1;
-
-    int error = dx + dy;
-
-    while (1)
-    {
-        LCD_DrawPixel(x0, y0, color);
-
-        if (x0 == x1 && y0 == y1)
-            break;
-
-        int e2 = 2 * error;
-
-        if (e2 >= dy)
-        {
-            error += dy;
-            x0 += sx;
-        }
-
-        if (e2 <= dx)
-        {
-            error += dx;
-            y0 += sy;
-        }
+        DrawChar(x, y, *str, color, background, scale);
+        x = (uint16_t)(x + 6U * scale);
+        ++str;
     }
 }
 
@@ -211,16 +174,16 @@ static void DrawInterface(void)
     /* Instrument header */
     LCD_FillRectangle(0, 0, 240, 34, C_PANEL);
     LCD_FillRectangle(0, 0, 4, 34, C_CYAN);
-    DrawText(12, 7, "SCOPE", C_TEXT, 2);
-    DrawText(88, 12, "DIGITAL", C_MUTED, 1);
+    DrawText(12, 7, "SCOPE", C_TEXT, C_PANEL, 2);
+    DrawText(88, 12, "DIGITAL", C_MUTED, C_PANEL, 1);
 
     /* Channel and acquisition badges */
     LCD_FillRectangle(174, 7, 56, 20, C_GREEN);
-    DrawText(181, 13, "CH1", C_BG, 1);
+    DrawText(181, 13, "CH1", C_BG, C_GREEN, 1);
 
     /* Waveform section */
-    DrawText(10, 39, "WAVEFORM", C_CYAN, 1);
-    DrawText(164, 39, "PA0 / ADC1", C_MUTED, 1);
+    DrawText(10, 39, "WAVEFORM", C_CYAN, C_BG, 1);
+    DrawText(164, 39, "PA0 / ADC1", C_MUTED, C_BG, 1);
 
     DrawGrid();
 
@@ -246,17 +209,17 @@ static void DrawInterface(void)
     LCD_FillRectangle(8, 242, 3, 48, C_GREEN);
     LCD_FillRectangle(124, 242, 3, 48, C_ORANGE);
 
-    DrawText(16, 194, "FREQUENCY", C_CYAN, 1);
-    DrawText(132, 194, "VPP", C_YELLOW, 1);
-    DrawText(16, 248, "AC RMS", C_GREEN, 1);
-    DrawText(132, 248, "PERIOD", C_ORANGE, 1);
+    DrawText(16, 194, "FREQUENCY", C_CYAN, C_PANEL, 1);
+    DrawText(132, 194, "VPP", C_YELLOW, C_PANEL, 1);
+    DrawText(16, 248, "AC RMS", C_GREEN, C_PANEL, 1);
+    DrawText(132, 248, "PERIOD", C_ORANGE, C_PANEL, 1);
 
     /* Footer: 220 displayed samples at 10 kS/s = 22 ms span */
     LCD_FillRectangle(0, 298, 240, 22, C_PANEL);
     LCD_FillRectangle(0, 298, 240, 1, C_GRID);
-    DrawText(9, 305, "22MS SPAN", C_TEXT, 1);
-    DrawText(105, 305, "10K S/S", C_CYAN, 1);
-    DrawText(190, 305, "AUTO", C_GREEN, 1);
+    DrawText(9, 305, "22MS SPAN", C_TEXT, C_PANEL, 1);
+    DrawText(105, 305, "10K S/S", C_CYAN, C_PANEL, 1);
+    DrawText(190, 305, "AUTO", C_GREEN, C_PANEL, 1);
 }
 
 static void CaptureSamples(void)
@@ -469,19 +432,19 @@ static void DrawMeasurements(void)
        floating-point printf support is not enabled in CubeIDE. */
     snprintf(text, sizeof(text), "%lu HZ", (unsigned long)freq_hz);
     LCD_FillRectangle(14, 207, 96, 22, C_PANEL);
-    DrawText(15, 210, text, C_TEXT, 1);
+    DrawText(15, 210, text, C_TEXT, C_PANEL, 1);
 
     snprintf(text, sizeof(text), "%lu.%02lu V",
              (unsigned long)(vpp_centi / 100U),
              (unsigned long)(vpp_centi % 100U));
     LCD_FillRectangle(130, 207, 96, 22, C_PANEL);
-    DrawText(131, 210, text, C_TEXT, 1);
+    DrawText(131, 210, text, C_TEXT, C_PANEL, 1);
 
     snprintf(text, sizeof(text), "%lu.%02lu V",
              (unsigned long)(rms_centi / 100U),
              (unsigned long)(rms_centi % 100U));
     LCD_FillRectangle(14, 261, 96, 22, C_PANEL);
-    DrawText(15, 264, text, C_TEXT, 1);
+    DrawText(15, 264, text, C_TEXT, C_PANEL, 1);
 
     if (frequency > 0.1f)
     {
@@ -497,7 +460,7 @@ static void DrawMeasurements(void)
     }
 
     LCD_FillRectangle(130, 261, 96, 22, C_PANEL);
-    DrawText(131, 264, text, C_TEXT, 1);
+    DrawText(131, 264, text, C_TEXT, C_PANEL, 1);
 }
 
 void Scope_Init(void)
