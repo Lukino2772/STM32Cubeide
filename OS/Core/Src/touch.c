@@ -26,10 +26,10 @@
 #define TOUCH_ADC_Y_CHANNEL ADC_CHANNEL_3
 
 /* Typical starting calibration for this shield; recalibrate on hardware. */
-#define TOUCH_RAW_X_MIN  150U
-#define TOUCH_RAW_X_MAX  920U
-#define TOUCH_RAW_Y_MIN  150U
-#define TOUCH_RAW_Y_MAX  920U
+#define TOUCH_RAW_X_MIN  600U
+#define TOUCH_RAW_X_MAX  3680U
+#define TOUCH_RAW_Y_MIN  600U
+#define TOUCH_RAW_Y_MAX  3680U
 #define TOUCH_MIN_PRESSURE  8U
 #define TOUCH_MAX_PRESSURE  1000U
 #define TOUCH_X_MAX 239U
