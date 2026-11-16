@@ -1,5 +1,6 @@
 #include "touch.h"
 #include <stdlib.h>
+#include <stddef.h>
 
 extern SPI_HandleTypeDef hspi2;
 
