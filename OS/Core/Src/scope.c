@@ -543,11 +543,41 @@ void Scope_TogglePause(void)
 
 void Scope_AutoSetup(void)
 {
-    scope_paused = 0U;
-    timebase_index = 3U;
-    voltage_scale_index = 2U;
+    /* Select a timebase that displays roughly two waveform periods. */
+    if (frequency > 0.1f)
+    {
+        uint32_t target_rate = (uint32_t)(frequency * 110.0f + 0.5f);
+        uint32_t best_error = 0xFFFFFFFFUL;
+        for (uint8_t i = 0U; i < (uint8_t)(sizeof(timebase_rates) / sizeof(timebase_rates[0])); ++i)
+        {
+            uint32_t error = (timebase_rates[i] > target_rate) ?
+                (timebase_rates[i] - target_rate) : (target_rate - timebase_rates[i]);
+            if (error < best_error)
+            {
+                best_error = error;
+                timebase_index = i;
+            }
+        }
+    }
+    else
+    {
+        timebase_index = 3U;
+    }
+
+    /* Pick the narrowest volts/div range that comfortably contains Vpp. */
+    float required_div = (voltage_pp * 1.2f) / 6.0f;
+    voltage_scale_index = 0U;
+    for (uint8_t i = 0U; i < (uint8_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])); ++i)
+    {
+        voltage_scale_index = i;
+        if (volts_per_div[i] >= required_div)
+            break;
+    }
+
     vertical_offset_counts = 0;
+    scope_paused = 0U;
     Scope_SetSampleRate(timebase_rates[timebase_index]);
+    DrawFooter();
     LCD_FillRectangle(174, 7, 56, 20, C_GREEN);
     DrawText(181, 13, "CH1", C_BG, C_GREEN, 1);
 }
@@ -557,6 +587,8 @@ void Scope_AdjustValue(int8_t direction)
     vertical_offset_counts += (int32_t)direction * 100;
     if (vertical_offset_counts > 2048) vertical_offset_counts = 2048;
     if (vertical_offset_counts < -2048) vertical_offset_counts = -2048;
+    if (scope_paused && sample_max > sample_min)
+        DrawWaveform();
 }
 
 void Scope_ChangeTimebase(int8_t direction)
@@ -578,6 +610,8 @@ void Scope_ChangeVoltageScale(int8_t direction)
         next = (int16_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])) - 1;
     voltage_scale_index = (uint8_t)next;
     DrawFooter();
+    if (scope_paused && sample_max > sample_min)
+        DrawWaveform();
 }
 
 void Scope_Update(void)
