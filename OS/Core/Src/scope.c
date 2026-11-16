@@ -47,6 +47,8 @@ static float voltage_rms;
 static float frequency;
 
 static volatile uint8_t capture_done = 0;
+static uint8_t capture_active = 0;
+static uint32_t capture_start_tick = 0U;
 
 /* 5x7 bitmap font */
 static const char font_chars[] =
@@ -221,34 +223,41 @@ static void DrawInterface(void)
     DrawText(190, 305, "AUTO", C_GREEN, C_PANEL, 1);
 }
 
-static void CaptureSamples(void)
+static uint8_t CaptureSamples(void)
 {
-    capture_done = 0;
-
-    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer,
-                          ADC_BUFFER_SIZE) != HAL_OK)
-        return;
-
-    if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+    if (!capture_active)
     {
-        HAL_ADC_Stop_DMA(&hadc1);
-        return;
+        capture_done = 0U;
+
+        if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_buffer,
+                              ADC_BUFFER_SIZE) != HAL_OK)
+            return 0U;
+
+        if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
+        {
+            (void)HAL_ADC_Stop_DMA(&hadc1);
+            return 0U;
+        }
+
+        capture_start_tick = HAL_GetTick();
+        capture_active = 1U;
+        return 0U;
     }
 
-    uint32_t start_tick = HAL_GetTick();
-    while (!capture_done && (HAL_GetTick() - start_tick) < 100U)
-    {
-        /* DMA completion interrupt sets capture_done. */
-    }
+    /* Acquisition runs in the background; the main loop remains responsive. */
+    if (!capture_done &&
+        (HAL_GetTick() - capture_start_tick) < 100U)
+        return 0U;
 
-    HAL_TIM_Base_Stop(&htim2);
-    HAL_ADC_Stop_DMA(&hadc1);
+    (void)HAL_TIM_Base_Stop(&htim2);
+    (void)HAL_ADC_Stop_DMA(&hadc1);
+    capture_active = 0U;
 
     if (!capture_done)
-        return;
+        return 0U;
 
-    for (uint16_t i = 0; i < ADC_BUFFER_SIZE; i++)
-        samples[i] = adc_buffer[i];
+    memcpy(samples, adc_buffer, sizeof(samples));
+    return 1U;
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
@@ -446,6 +455,8 @@ void Scope_Init(void)
 {
     memset(adc_buffer, 0, sizeof(adc_buffer));
     memset(samples, 0, sizeof(samples));
+    capture_active = 0U;
+    capture_done = 0U;
     InitGridMasks();
 
     DrawInterface();
@@ -453,9 +464,7 @@ void Scope_Init(void)
 
 void Scope_Update(void)
 {
-    CaptureSamples();
-
-    if (!capture_done)
+    if (!CaptureSamples())
         return;
 
     CalculateMeasurements();
