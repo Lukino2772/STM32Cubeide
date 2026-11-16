@@ -45,6 +45,8 @@ static uint8_t long_press_sent;
 static uint32_t press_started;
 static int16_t press_start_x;
 static int16_t press_start_y;
+static int16_t press_last_x;
+static int16_t press_last_y;
 
 static void PinMode(GPIO_TypeDef *port, uint16_t pin, uint32_t mode)
 {
@@ -177,8 +179,11 @@ uint8_t Touch_Read(TouchPoint *point)
 
     if (z1 > 0U && z2 >= z1)
     {
-        uint32_t pressure = (1023U - (uint32_t)(z2 - z1));
-        pressure = (pressure * raw_x * 300U) >> 20;
+        uint16_t x10 = (uint16_t)(raw_x >> 2);
+        uint16_t z1_10 = (uint16_t)(z1 >> 2);
+        uint16_t z2_10 = (uint16_t)(z2 >> 2);
+        uint32_t pressure = (1023U - (uint32_t)(z2_10 - z1_10));
+        pressure = (pressure * x10 * 300U) >> 10;
         if (pressure > 0xFFFFU) pressure = 0xFFFFU;
         point->z = (uint16_t)pressure;
     }
@@ -228,9 +233,15 @@ TouchGesture Touch_GetGesture(void)
             press_started = now;
             press_start_x = (int16_t)point.x;
             press_start_y = (int16_t)point.y;
+            press_last_x = (int16_t)point.x;
+            press_last_y = (int16_t)point.y;
         }
-        else if (!long_press_sent &&
-                 (now - press_started) >= TOUCH_LONG_MS)
+        else
+        {
+            press_last_x = (int16_t)point.x;
+            press_last_y = (int16_t)point.y;
+        }
+        if (!long_press_sent && (now - press_started) >= TOUCH_LONG_MS)
         {
             long_press_sent = 1U;
             return TOUCH_LONG_PRESS;
@@ -245,8 +256,8 @@ TouchGesture Touch_GetGesture(void)
     if (long_press_sent)
         return TOUCH_NONE;
 
-    int16_t dx = (int16_t)point.x - press_start_x;
-    int16_t dy = (int16_t)point.y - press_start_y;
+    int16_t dx = press_last_x - press_start_x;
+    int16_t dy = press_last_y - press_start_y;
     uint32_t duration = now - press_started;
 
     if (abs(dx) >= TOUCH_SWIPE_DELTA &&
