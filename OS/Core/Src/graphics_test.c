@@ -8,6 +8,7 @@
 
 static pd_gfx_demo_t gfx_demo;
 static uint16_t gfx_scratch[PD_GFX_DEMO_MIN_SCRATCH_PIXELS];
+static pd_gfx_command_t gfx_commands[PD_GFX_DEMO_FAST_COMMANDS];
 static pd_gfx_bench_result_t gfx_benchmark_result;
 
 static const uint8_t font_letters[26][5] = {
@@ -171,20 +172,24 @@ static void show_error(pd_status_t status)
 void GraphicsTest_Run(void)
 {
     static const pd_gfx_scene_t scenes[] = {
-        PD_GFX_SCENE_CUBE,
-        PD_GFX_SCENE_PYRAMID,
-        PD_GFX_SCENE_SPHERE,
-        PD_GFX_SCENE_TORUS,
-        PD_GFX_SCENE_HELIX,
-        PD_GFX_SCENE_SADDLE,
-        PD_GFX_SCENE_RIPPLE,
-        PD_GFX_SCENE_SOLAR_SYSTEM,
-        PD_GFX_SCENE_GYROSCOPE
+        PD_GFX_SCENE_SINE, PD_GFX_SCENE_DAMPED_WAVE,
+        PD_GFX_SCENE_PARABOLA, PD_GFX_SCENE_EXPONENTIAL,
+        PD_GFX_SCENE_LISSAJOUS, PD_GFX_SCENE_CUBE,
+        PD_GFX_SCENE_PYRAMID, PD_GFX_SCENE_SPHERE,
+        PD_GFX_SCENE_TORUS, PD_GFX_SCENE_HELIX,
+        PD_GFX_SCENE_SADDLE, PD_GFX_SCENE_RIPPLE,
+        PD_GFX_SCENE_SOLAR_SYSTEM, PD_GFX_SCENE_PENDULUM,
+        PD_GFX_SCENE_DOUBLE_PENDULUM, PD_GFX_SCENE_CRANK_SLIDER,
+        PD_GFX_SCENE_GEARS, PD_GFX_SCENE_GYROSCOPE
     };
 
     pd_status_t status = pd_gfx_demo_init(&gfx_demo, &gfx_display,
                                           gfx_scratch,
                                           PD_GFX_DEMO_MIN_SCRATCH_PIXELS);
+    if (status == PD_OK) {
+        status = pd_gfx_demo_set_command_cache(
+            &gfx_demo, gfx_commands, PD_GFX_DEMO_FAST_COMMANDS);
+    }
     if (status != PD_OK) {
         show_error(status);
         return;
