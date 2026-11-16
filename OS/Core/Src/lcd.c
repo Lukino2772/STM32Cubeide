@@ -30,22 +30,51 @@
 #define LCD_DATA_MASK (GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_5 | \
                        GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_12)
 
-/* Put all 8 data bits on the scattered pins with ONE atomic BSRR write
-   (low half = set, high half = reset) instead of 8 HAL calls. */
+/* Fast lookup tables for the scattered PB data pins.
+   Each entry contains both BSRR set and reset bits for one nibble. */
+static const uint32_t lcd_bus_low_lut[16] = {
+    0x00270000UL,
+    0x00260001UL,
+    0x00250002UL,
+    0x00240003UL,
+    0x00230004UL,
+    0x00220005UL,
+    0x00210006UL,
+    0x00200007UL,
+    0x00070020UL,
+    0x00060021UL,
+    0x00050022UL,
+    0x00040023UL,
+    0x00030024UL,
+    0x00020025UL,
+    0x00010026UL,
+    0x00000027UL
+};
+
+static const uint32_t lcd_bus_high_lut[16] = {
+    0x17000000UL,
+    0x16000100UL,
+    0x15000200UL,
+    0x14000300UL,
+    0x13000400UL,
+    0x12000500UL,
+    0x11000600UL,
+    0x10000700UL,
+    0x07001000UL,
+    0x06001100UL,
+    0x05001200UL,
+    0x04001300UL,
+    0x03001400UL,
+    0x02001500UL,
+    0x01001600UL,
+    0x00001700UL
+};
+
+/* One BSRR write updates all eight data lines atomically. */
 static inline void LCD_WriteBus(uint8_t data)
 {
-    uint32_t set = 0;
-
-    if (data & 0x01) set |= GPIO_PIN_0;
-    if (data & 0x02) set |= GPIO_PIN_1;
-    if (data & 0x04) set |= GPIO_PIN_2;
-    if (data & 0x08) set |= GPIO_PIN_5;
-    if (data & 0x10) set |= GPIO_PIN_8;
-    if (data & 0x20) set |= GPIO_PIN_9;
-    if (data & 0x40) set |= GPIO_PIN_10;
-    if (data & 0x80) set |= GPIO_PIN_12;
-
-    GPIOB->BSRR = set | ((LCD_DATA_MASK & ~set) << 16);
+    GPIOB->BSRR = lcd_bus_low_lut[data & 0x0FU] |
+                  lcd_bus_high_lut[data >> 4];
 }
 
 static inline void LCD_Write8(uint8_t data)
@@ -59,15 +88,25 @@ static inline void LCD_Write8(uint8_t data)
     LCD_WR_PORT->BSRR = LCD_WR_PIN;                   /* WR high (data latched) */
 }
 
+static inline void LCD_RS_CommandMode(void)
+{
+    GPIOA->BSRR = (uint32_t)LCD_RS_PIN << 16;
+}
+
+static inline void LCD_RS_DataMode(void)
+{
+    GPIOA->BSRR = LCD_RS_PIN;
+}
+
 static void LCD_Command(uint8_t command)
 {
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_RESET);
+    LCD_RS_CommandMode();
     LCD_Write8(command);
 }
 
 static void LCD_Data(uint8_t data)
 {
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_SET);
+    LCD_RS_DataMode();
     LCD_Write8(data);
 }
 
@@ -130,7 +169,7 @@ static uint16_t LCD_ReadID(void)
 {
     /* ILI9325/9328: register 0x0000 reads back the device code */
     LCD_Index16(0x0000);
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_SET);
+    LCD_RS_DataMode();
     LCD_BusMode(GPIO_MODE_INPUT);
     uint8_t hi = LCD_Read8();
     uint8_t lo = LCD_Read8();
@@ -141,7 +180,7 @@ static uint16_t LCD_ReadID(void)
 
     /* ILI9341: command 0xD3 returns dummy, 0x00, 0x93, 0x41 */
     LCD_Command(0xD3);
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_SET);
+    LCD_RS_DataMode();
     LCD_BusMode(GPIO_MODE_INPUT);
     (void)LCD_Read8();
     (void)LCD_Read8();
@@ -154,22 +193,22 @@ static uint16_t LCD_ReadID(void)
     return id;
 }
 
-static void LCD_Select(void)
+static inline void LCD_Select(void)
 {
-    HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_RESET);
+    GPIOA->BSRR = (uint32_t)LCD_CS_PIN << 16;
 }
 
-static void LCD_Deselect(void)
+static inline void LCD_Deselect(void)
 {
-    HAL_GPIO_WritePin(LCD_CS_PORT, LCD_CS_PIN, GPIO_PIN_SET);
+    GPIOA->BSRR = LCD_CS_PIN;
 }
 
 static void LCD_HardwareReset(void)
 {
-    HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_RESET);
+    GPIOA->BSRR = (uint32_t)LCD_RST_PIN << 16;
     HAL_Delay(20);
 
-    HAL_GPIO_WritePin(LCD_RST_PORT, LCD_RST_PIN, GPIO_PIN_SET);
+    GPIOA->BSRR = LCD_RST_PIN;
     HAL_Delay(150);
 }
 
@@ -453,7 +492,7 @@ void LCD_FillRectangle(uint16_t x, uint16_t y,
     uint32_t pixels = (uint32_t)width * height;
     uint8_t hi = color >> 8, lo = color & 0xFF;
 
-    HAL_GPIO_WritePin(LCD_RS_PORT, LCD_RS_PIN, GPIO_PIN_SET);   /* data mode, once */
+    LCD_RS_DataMode();   /* data mode, once */
     for (uint32_t i = 0; i < pixels; i++)
     {
         LCD_Write8(hi);
