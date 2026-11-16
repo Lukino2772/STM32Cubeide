@@ -12,7 +12,8 @@ extern TIM_HandleTypeDef htim2;
 #include <stdint.h>
 
 #define ADC_BUFFER_SIZE 256
-#define SAMPLE_RATE     10000.0f
+#define ADC_TIMER_HZ    1000000UL
+#define DEFAULT_SAMPLE_RATE 10000UL
 
 #define GRAPH_X  10
 #define GRAPH_Y  48
@@ -45,6 +46,14 @@ static uint16_t sample_max;
 static float voltage_pp;
 static float voltage_rms;
 static float frequency;
+static float sample_average;
+static uint32_t sample_rate_hz = DEFAULT_SAMPLE_RATE;
+static uint8_t timebase_index = 3U;
+static uint8_t voltage_scale_index = 2U;
+static int32_t vertical_offset_counts = 0;
+static uint8_t scope_paused = 0U;
+static const uint32_t timebase_rates[] = {1000U, 2000U, 5000U, 10000U, 20000U, 50000U};
+static const float volts_per_div[] = {0.1f, 0.2f, 0.5f, 1.0f, 2.0f};
 
 static volatile uint8_t capture_done = 0;
 static uint8_t capture_active = 0;
@@ -215,12 +224,21 @@ static void DrawInterface(void)
     DrawText(16, 248, "AC RMS", C_GREEN, C_PANEL, 1);
     DrawText(132, 248, "PERIOD", C_ORANGE, C_PANEL, 1);
 
-    /* Footer: 220 displayed samples at 10 kS/s = 22 ms span */
+    /* Dynamic acquisition settings in the footer. */
+    char footer[20];
+    uint32_t span_tenths_ms = 2200000UL / sample_rate_hz;
+    snprintf(footer, sizeof(footer), "%lu.%luMS",
+             (unsigned long)(span_tenths_ms / 10U),
+             (unsigned long)(span_tenths_ms % 10U));
     LCD_FillRectangle(0, 298, 240, 22, C_PANEL);
     LCD_FillRectangle(0, 298, 240, 1, C_GRID);
-    DrawText(9, 305, "22MS SPAN", C_TEXT, C_PANEL, 1);
-    DrawText(105, 305, "10K S/S", C_CYAN, C_PANEL, 1);
-    DrawText(190, 305, "AUTO", C_GREEN, C_PANEL, 1);
+    DrawText(7, 305, footer, C_TEXT, C_PANEL, 1);
+    snprintf(footer, sizeof(footer), "%luK S/S",
+             (unsigned long)(sample_rate_hz / 1000U));
+    DrawText(85, 305, footer, C_CYAN, C_PANEL, 1);
+    snprintf(footer, sizeof(footer), "%.1fV/DIV",
+             (double)volts_per_div[voltage_scale_index]);
+    DrawText(158, 305, footer, C_GREEN, C_PANEL, 1);
 }
 
 static uint8_t CaptureSamples(void)
@@ -288,6 +306,7 @@ static void CalculateMeasurements(void)
     }
 
     float average = (float)sum / GRAPH_W;
+    sample_average = average;
 
     for (uint16_t i = 0; i < GRAPH_W; i++)
     {
@@ -328,7 +347,7 @@ static void CalculateMeasurements(void)
             (float)(last_crossing - first_crossing) /
             (float)(crossing_count - 1);
 
-        frequency = SAMPLE_RATE / average_period;
+        frequency = (float)sample_rate_hz / average_period;
     }
     else
     {
@@ -338,28 +357,18 @@ static void CalculateMeasurements(void)
 
 static void DrawWaveform(void)
 {
-    uint16_t range = (uint16_t)(sample_max - sample_min);
-    if (range < 10U)
-        range = 10U;
-
-    int32_t margin = range / 10U;
-    int32_t low = (int32_t)sample_min - margin;
-    int32_t high = (int32_t)sample_max + margin;
-
-    if (low < 0)
-        low = 0;
-    if (high > 4095)
-        high = 4095;
-
-    uint32_t display_range = (uint32_t)(high - low);
-    if (display_range == 0U)
-        display_range = 1U;
+    /* Fixed volts/div scaling, centered around the captured DC average. */
+    float counts_per_div = volts_per_div[voltage_scale_index] * 4095.0f / 3.3f;
+    float full_scale_counts = counts_per_div * 6.0f;
+    if (full_scale_counts < 1.0f)
+        full_scale_counts = 1.0f;
 
     for (uint16_t x = 0; x < GRAPH_W; ++x)
     {
-        int32_t offset = (int32_t)samples[x] - low;
-        int32_t py = (GRAPH_H - 1) -
-            (int32_t)(((uint32_t)offset * (GRAPH_H - 1U)) / display_range);
+        float centered = (float)samples[x] - sample_average -
+                         (float)vertical_offset_counts;
+        int32_t py = (GRAPH_H / 2) -
+            (int32_t)(centered * (float)(GRAPH_H - 1U) / full_scale_counts);
 
         if (py < 0)
             py = 0;
@@ -457,13 +466,94 @@ void Scope_Init(void)
     memset(samples, 0, sizeof(samples));
     capture_active = 0U;
     capture_done = 0U;
+    scope_paused = 0U;
+    sample_rate_hz = DEFAULT_SAMPLE_RATE;
+    timebase_index = 3U;
+    voltage_scale_index = 2U;
+    vertical_offset_counts = 0;
+    Scope_SetSampleRate(sample_rate_hz);
     InitGridMasks();
 
     DrawInterface();
 }
 
+uint8_t Scope_IsAcquiring(void)
+{
+    return capture_active;
+}
+
+static void Scope_SetSampleRate(uint32_t rate)
+{
+    if (rate < 1000U) rate = 1000U;
+    if (rate > 50000U) rate = 50000U;
+    sample_rate_hz = rate;
+
+    (void)HAL_TIM_Base_Stop(&htim2);
+    uint32_t period = ADC_TIMER_HZ / sample_rate_hz;
+    if (period < 2U) period = 2U;
+    __HAL_TIM_SET_AUTORELOAD(&htim2, period - 1U);
+    __HAL_TIM_SET_COUNTER(&htim2, 0U);
+    htim2.Init.Period = period - 1U;
+}
+
+void Scope_TogglePause(void)
+{
+    scope_paused = (uint8_t)!scope_paused;
+    if (scope_paused && capture_active)
+    {
+        (void)HAL_TIM_Base_Stop(&htim2);
+        (void)HAL_ADC_Stop_DMA(&hadc1);
+        capture_active = 0U;
+        capture_done = 0U;
+    }
+    LCD_FillRectangle(174, 7, 56, 20, scope_paused ? C_ORANGE : C_GREEN);
+    DrawText(scope_paused ? 179 : 181, 13,
+             scope_paused ? "PAUSE" : "CH1",
+             C_BG, scope_paused ? C_ORANGE : C_GREEN, 1);
+}
+
+void Scope_AutoSetup(void)
+{
+    scope_paused = 0U;
+    timebase_index = 3U;
+    voltage_scale_index = 2U;
+    vertical_offset_counts = 0;
+    Scope_SetSampleRate(timebase_rates[timebase_index]);
+    LCD_FillRectangle(174, 7, 56, 20, C_GREEN);
+    DrawText(181, 13, "CH1", C_BG, C_GREEN, 1);
+}
+
+void Scope_AdjustValue(int8_t direction)
+{
+    vertical_offset_counts += (int32_t)direction * 100;
+    if (vertical_offset_counts > 2048) vertical_offset_counts = 2048;
+    if (vertical_offset_counts < -2048) vertical_offset_counts = -2048;
+}
+
+void Scope_ChangeTimebase(int8_t direction)
+{
+    int16_t next = (int16_t)timebase_index + direction;
+    if (next < 0) next = 0;
+    if (next >= (int16_t)(sizeof(timebase_rates) / sizeof(timebase_rates[0])))
+        next = (int16_t)(sizeof(timebase_rates) / sizeof(timebase_rates[0])) - 1;
+    timebase_index = (uint8_t)next;
+    Scope_SetSampleRate(timebase_rates[timebase_index]);
+}
+
+void Scope_ChangeVoltageScale(int8_t direction)
+{
+    int16_t next = (int16_t)voltage_scale_index + direction;
+    if (next < 0) next = 0;
+    if (next >= (int16_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])))
+        next = (int16_t)(sizeof(volts_per_div) / sizeof(volts_per_div[0])) - 1;
+    voltage_scale_index = (uint8_t)next;
+}
+
 void Scope_Update(void)
 {
+    if (scope_paused)
+        return;
+
     if (!CaptureSamples())
         return;
 
