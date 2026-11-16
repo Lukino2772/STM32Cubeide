@@ -85,12 +85,7 @@ static pd_status_t function_frame(const pd_gfx_display_t *s,
     const int32_t cx = w / 2;
     const int32_t cy = h / 2;
     const int32_t amp = h / 3;
-    pd_status_t status = background(s, true);
-    if (status != PD_OK) return status;
-    status = gfx_line(s, 0, cy, w - 1, cy, 0x39E7U);
-    if (status != PD_OK) return status;
-    status = gfx_line(s, cx, 0, cx, h - 1, 0x39E7U);
-    if (status != PD_OK) return status;
+    pd_status_t status = PD_OK;
     int32_t previous_x = 0, previous_y = cy;
     const uint16_t sample_count = scene == PD_GFX_SCENE_LISSAJOUS ? 160U : s->width;
     for (uint16_t i = 0U; i <= sample_count; i = (uint16_t)(i + 2U)) {
@@ -448,6 +443,247 @@ static pd_status_t mechanics(const pd_gfx_display_t *s,
         default: return PD_ERANGE;
     }
 }
+
+/* Dirty-tile vector compositor. Geometry is captured without touching the
+ * LCD; only the 11x11 tiles intersecting old/new primitives are transferred.
+ * A tile is fully composed in scratch BEFORE its single RGB565 blit, so
+ * SPI and 8080 buses never expose a partially erased wireframe. */
+typedef struct {
+    pd_gfx_demo_t *demo;
+    uint32_t *mask;
+    uint32_t hash;
+    size_t count;
+} gfx_capture_t;
+typedef struct {
+    pd_gfx_demo_t *demo;
+    int32_t x, y;
+    uint16_t w, h;
+} gfx_tile_t;
+
+static void tile_mark(const pd_gfx_demo_t *d, uint32_t *mask,
+                      int32_t x, int32_t y) {
+    if (x < 0 || y < 0 || x >= (int32_t)d->screen.width ||
+        y >= (int32_t)d->screen.height) return;
+    const uint32_t columns =
+        ((uint32_t)d->screen.width + PD_GFX_DEMO_TILE_SIZE - 1U) /
+        PD_GFX_DEMO_TILE_SIZE;
+    const uint32_t index =
+        ((uint32_t)y / PD_GFX_DEMO_TILE_SIZE) * columns +
+        (uint32_t)x / PD_GFX_DEMO_TILE_SIZE;
+    mask[index / 32U] |= (uint32_t)1U << (index % 32U);
+}
+static uint32_t hash_word(uint32_t hash, uint16_t v) {
+    return (hash ^ (uint32_t)v) * 16777619U;
+}
+static void capture_command(gfx_capture_t *a, pd_gfx_command_t p) {
+    pd_gfx_demo_t *d = a->demo;
+    if (d->commands != NULL && a->count < d->command_capacity)
+        d->commands[a->count] = p;
+    ++a->count;
+    a->hash = hash_word(a->hash,(uint16_t)p.x0);
+    a->hash = hash_word(a->hash,(uint16_t)p.y0);
+    a->hash = hash_word(a->hash,(uint16_t)p.x1);
+    a->hash = hash_word(a->hash,(uint16_t)p.y1);
+    a->hash = hash_word(a->hash,p.color);
+    a->hash = hash_word(a->hash,(uint16_t)p.kind);
+}
+static pd_status_t capture_line(void *ctx, int16_t x0, int16_t y0,
+                                int16_t x1, int16_t y1, uint16_t color) {
+    gfx_capture_t *a=(gfx_capture_t *)ctx;
+    const pd_gfx_command_t p={x0,y0,x1,y1,color,0U};
+    capture_command(a,p);
+    int32_t x=x0,y=y0;
+    const int32_t dx=abs32((int32_t)x1-x0);
+    const int32_t dy=abs32((int32_t)y1-y0);
+    const int32_t sx=x0<x1 ? 1 : -1;
+    const int32_t sy=y0<y1 ? 1 : -1;
+    int32_t err=dx-dy;
+    for (;;) {
+        tile_mark(a->demo,a->mask,x,y);
+        if (x==x1 && y==y1) break;
+        const int32_t twice=err*2;
+        if (twice > -dy) {err-=dy; x+=sx;}
+        if (twice < dx) {err+=dx; y+=sy;}
+    }
+    return PD_OK;
+}
+static pd_status_t capture_fill(void *ctx, uint16_t x, uint16_t y,
+                                uint16_t w, uint16_t h, uint16_t color) {
+    gfx_capture_t *a=(gfx_capture_t *)ctx;
+    if (w==0U || h==0U || (uint32_t)x+w>a->demo->screen.width ||
+        (uint32_t)y+h>a->demo->screen.height) return PD_ERANGE;
+    const pd_gfx_command_t p={
+        (int16_t)x,(int16_t)y,(int16_t)((uint32_t)x+w-1U),
+        (int16_t)((uint32_t)y+h-1U),color,1U};
+    capture_command(a,p);
+    const int32_t step=(int32_t)PD_GFX_DEMO_TILE_SIZE;
+    for (int32_t ty=(int32_t)y/step; ty <= (int32_t)p.y1/step; ++ty)
+        for (int32_t tx=(int32_t)x/step; tx <= (int32_t)p.x1/step; ++tx)
+            tile_mark(a->demo,a->mask,tx*step,ty*step);
+    return PD_OK;
+}
+static pd_status_t draw_geometry(const pd_gfx_display_t *s,
+                                 pd_gfx_scene_t scene, uint32_t now) {
+    if (scene <= PD_GFX_SCENE_LISSAJOUS)
+        return function_frame(s,scene,now);
+    if (scene <= PD_GFX_SCENE_PYRAMID)
+        return cube_or_pyramid(s,scene==PD_GFX_SCENE_PYRAMID,now);
+    if (scene <= PD_GFX_SCENE_RIPPLE)
+        return procedural3d(s,scene,now);
+    return mechanics(s,scene,now);
+}
+static uint16_t tile_background(const pd_gfx_demo_t *d,
+                                pd_gfx_scene_t scene,
+                                int32_t x, int32_t y) {
+    if (scene <= PD_GFX_SCENE_LISSAJOUS) {
+        if (x==(int32_t)d->screen.width/2 ||
+            y==(int32_t)d->screen.height/2) return 0x39E7U;
+        if ((x!=0 && x%24==0) || (y!=0 && y%24==0)) return GFX_GRID;
+    }
+    return GFX_BACKGROUND;
+}
+static pd_status_t tile_fill(void *ctx, uint16_t x, uint16_t y,
+                             uint16_t w, uint16_t h, uint16_t color) {
+    gfx_tile_t *t=(gfx_tile_t *)ctx;
+    int32_t left=(int32_t)x>t->x ? x:t->x;
+    int32_t top=(int32_t)y>t->y ? y:t->y;
+    int32_t right=(int32_t)x+(int32_t)w;
+    int32_t bottom=(int32_t)y+(int32_t)h;
+    if (right > t->x+(int32_t)t->w) right=t->x+(int32_t)t->w;
+    if (bottom > t->y+(int32_t)t->h) bottom=t->y+(int32_t)t->h;
+    for (int32_t yy=top; yy<bottom; ++yy)
+        for (int32_t xx=left; xx<right; ++xx)
+            t->demo->scratch[(size_t)(yy-t->y)*t->w+
+                             (size_t)(xx-t->x)]=color;
+    return PD_OK;
+}
+static pd_status_t tile_line(void *ctx,int16_t x0,int16_t y0,
+                             int16_t x1,int16_t y1,uint16_t color) {
+    gfx_tile_t *t=(gfx_tile_t *)ctx;
+    /* Bounding box rejection makes a cached 320-edge torus affordable. */
+    if ((x0<t->x && x1<t->x) ||
+        (y0<t->y && y1<t->y) ||
+        (x0>=t->x+(int32_t)t->w && x1>=t->x+(int32_t)t->w) ||
+        (y0>=t->y+(int32_t)t->h && y1>=t->y+(int32_t)t->h)) return PD_OK;
+    int32_t x=x0,y=y0;
+    const int32_t dx=abs32((int32_t)x1-x0);
+    const int32_t dy=abs32((int32_t)y1-y0);
+    const int32_t sx=x0<x1 ? 1 : -1;
+    const int32_t sy=y0<y1 ? 1 : -1;
+    int32_t err=dx-dy;
+    for (;;) {
+        if (x>=t->x && y>=t->y &&
+            x<t->x+(int32_t)t->w && y<t->y+(int32_t)t->h)
+            t->demo->scratch[(size_t)(y-t->y)*t->w+
+                             (size_t)(x-t->x)]=color;
+        if (x==x1 && y==y1) break;
+        const int32_t twice=err*2;
+        if (twice > -dy) {err-=dy; x+=sx;}
+        if (twice < dx) {err+=dx; y+=sy;}
+    }
+    return PD_OK;
+}
+static pd_status_t paint_tile(pd_gfx_demo_t *d,pd_gfx_scene_t scene,
+                              uint32_t now,uint16_t x,uint16_t y,
+                              uint16_t w,uint16_t h,
+                              size_t commands,bool cache_valid) {
+    gfx_tile_t tile={d,x,y,w,h};
+    for (uint16_t yy=0U;yy<h;++yy)
+        for (uint16_t xx=0U;xx<w;++xx)
+            d->scratch[(size_t)yy*w+xx]=tile_background(
+                d,scene,(int32_t)x+xx,(int32_t)y+yy);
+    pd_status_t status=PD_OK;
+    if (cache_valid) {
+        for (size_t i=0U;i<commands;++i) {
+            const pd_gfx_command_t *p=&d->commands[i];
+            if (p->kind==0U)
+                status=tile_line(&tile,p->x0,p->y0,p->x1,p->y1,p->color);
+            else
+                status=tile_fill(&tile,(uint16_t)p->x0,(uint16_t)p->y0,
+                     (uint16_t)((int32_t)p->x1-p->x0+1),
+                     (uint16_t)((int32_t)p->y1-p->y0+1),p->color);
+            if (status!=PD_OK) return status;
+        }
+    } else {
+        /* Preserve the 242-byte minimum configuration: slower geometry
+         * replay but the same partial-transfer and tear-free tile output. */
+        pd_gfx_display_t proxy=d->screen;
+        proxy.ctx=&tile;
+        proxy.line=tile_line;
+        proxy.fill=tile_fill;
+        proxy.blit=NULL;
+        status=draw_geometry(&proxy,scene,now);
+        if (status!=PD_OK) return status;
+    }
+    return d->screen.blit(d->screen.ctx,x,y,w,h,d->scratch,
+                          (size_t)w*h);
+}
+static pd_status_t render_incremental(pd_gfx_demo_t *d,
+                                      pd_gfx_scene_t scene,uint32_t now) {
+    uint32_t next_mask[PD_GFX_DEMO_TILE_WORDS]={0U};
+    gfx_capture_t cap={d,next_mask,2166136261U,0U};
+    pd_gfx_display_t proxy=d->screen;
+    proxy.ctx=&cap;
+    proxy.line=capture_line;
+    proxy.fill=capture_fill;
+    proxy.blit=NULL;
+    pd_status_t status=draw_geometry(&proxy,scene,now);
+    if (status!=PD_OK) return status;
+    const bool fresh=d->previous_scene!=scene;
+    cap.hash=hash_word(cap.hash,(uint16_t)cap.count);
+    if (!fresh && d->last_geometry_hash==cap.hash &&
+        d->last_command_count==cap.count) return PD_OK;
+    if (fresh) {
+        status=background(&d->screen,scene<=PD_GFX_SCENE_LISSAJOUS);
+        if (status!=PD_OK) return status;
+        if (scene<=PD_GFX_SCENE_LISSAJOUS) {
+            status=gfx_line(&d->screen,0,(int32_t)d->screen.height/2,
+                           (int32_t)d->screen.width-1,
+                           (int32_t)d->screen.height/2,0x39E7U);
+            if (status!=PD_OK) return status;
+            status=gfx_line(&d->screen,(int32_t)d->screen.width/2,0,
+                           (int32_t)d->screen.width/2,
+                           (int32_t)d->screen.height-1,0x39E7U);
+            if (status!=PD_OK) return status;
+        }
+    }
+    const bool cached=d->commands!=NULL && cap.count<=d->command_capacity;
+    const uint32_t cols=((uint32_t)d->screen.width+
+                         PD_GFX_DEMO_TILE_SIZE-1U)/PD_GFX_DEMO_TILE_SIZE;
+    const uint32_t rows=((uint32_t)d->screen.height+
+                         PD_GFX_DEMO_TILE_SIZE-1U)/PD_GFX_DEMO_TILE_SIZE;
+    bool touches_title=fresh;
+    for (uint32_t row=0U;row<rows;++row) {
+        for (uint32_t col=0U;col<cols;++col) {
+            const uint32_t index=row*cols+col;
+            const uint32_t bit=(uint32_t)1U << (index%32U);
+            const uint32_t dirty=next_mask[index/32U] |
+                (fresh ? 0U : d->occupied[index/32U]);
+            if ((dirty&bit)==0U) continue;
+            const uint16_t x=(uint16_t)(col*PD_GFX_DEMO_TILE_SIZE);
+            const uint16_t y=(uint16_t)(row*PD_GFX_DEMO_TILE_SIZE);
+            const uint16_t w=smaller((uint16_t)PD_GFX_DEMO_TILE_SIZE,
+                                      (uint16_t)(d->screen.width-x));
+            const uint16_t h=smaller((uint16_t)PD_GFX_DEMO_TILE_SIZE,
+                                      (uint16_t)(d->screen.height-y));
+            status=paint_tile(d,scene,now,x,y,w,h,cap.count,cached);
+            if (status!=PD_OK) return status;
+            if (y<20U) touches_title=true;
+        }
+    }
+    if (touches_title && d->screen.text!=NULL) {
+        status=d->screen.text(d->screen.ctx,4U,4U,
+                  pd_gfx_demo_scene_name(scene),
+                  GFX_FOREGROUND,GFX_BACKGROUND);
+        if (status!=PD_OK) return status;
+    }
+    for (size_t i=0U;i<PD_GFX_DEMO_TILE_WORDS;++i)
+        d->occupied[i]=next_mask[i];
+    d->last_geometry_hash=cap.hash;
+    d->last_command_count=cap.count;
+    return PD_OK;
+}
+
 static const char *const scene_names[PD_GFX_SCENE_COUNT] = {
     "SINE WAVE", "DAMPED WAVE", "PARABOLA", "EXPONENTIAL",
     "LISSAJOUS", "3D CUBE", "3D PYRAMID", "3D SPHERE",
@@ -478,6 +714,11 @@ pd_status_t pd_gfx_demo_init(pd_gfx_demo_t *d,
     d->solar_speed_q8 = 256U;
     d->previous_scene = PD_GFX_SCENE_COUNT;
     d->solar_ready = false;
+    d->commands = NULL;
+    d->command_capacity = 0U;
+    d->last_geometry_hash = 0U;
+    d->last_command_count = 0U;
+    for (size_t i=0U;i<PD_GFX_DEMO_TILE_WORDS;++i) d->occupied[i]=0U;
     for (size_t i = 0U; i < PD_GFX_DEMO_PLANETS; ++i) {
         d->orbit_phase[i] = 0U;
         d->old_x[i] = -1; d->old_y[i] = -1;
@@ -492,6 +733,14 @@ void pd_gfx_demo_invalidate(pd_gfx_demo_t *d) {
         d->solar_ready = false;
     }
 }
+pd_status_t pd_gfx_demo_set_command_cache(pd_gfx_demo_t *d,
+    pd_gfx_command_t *commands,size_t capacity) {
+    if (d==NULL || !d->initialized) return PD_ENOTREADY;
+    if ((commands==NULL) != (capacity==0U)) return PD_EINVAL;
+    d->commands=commands;
+    d->command_capacity=capacity;
+    return PD_OK;
+}
 pd_status_t pd_gfx_demo_set_solar_speed(pd_gfx_demo_t *d,
                                         uint16_t speed_q8) {
     if (d == NULL || !d->initialized) return PD_ENOTREADY;
@@ -501,45 +750,25 @@ pd_status_t pd_gfx_demo_set_solar_speed(pd_gfx_demo_t *d,
 }
 pd_status_t pd_gfx_demo_render(pd_gfx_demo_t *d,
                                 pd_gfx_scene_t scene,uint32_t now_ms) {
-    if (d == NULL || !d->initialized) return PD_ENOTREADY;
+    if (d==NULL || !d->initialized) return PD_ENOTREADY;
     if ((unsigned)scene >= (unsigned)PD_GFX_SCENE_COUNT)
         return PD_ERANGE;
     pd_status_t status;
-    if (scene == PD_GFX_SCENE_SOLAR_SYSTEM) {
-        status = pd_gfx_demo_solar_frame(
-            d,now_ms,d->previous_scene != PD_GFX_SCENE_SOLAR_SYSTEM);
-    } else {
-        /* A later return to solar must reconstruct its full sky before
-         * continuing incremental planet tiles. */
-        d->solar_ready = false;
-        const pd_gfx_display_t *s = &d->screen;
-        if (scene <= PD_GFX_SCENE_LISSAJOUS) {
-            status = function_frame(s,scene,now_ms);
-        } else {
-            status = background(s,false);
-            if (status == PD_OK) {
-                if (scene <= PD_GFX_SCENE_PYRAMID)
-                    status = cube_or_pyramid(s,
-                        scene == PD_GFX_SCENE_PYRAMID,now_ms);
-                else if (scene <= PD_GFX_SCENE_RIPPLE)
-                    status = procedural3d(s,scene,now_ms);
-                else
-                    status = mechanics(s,scene,now_ms);
-            }
-        }
-    }
-    if (status == PD_OK && d->screen.text != NULL &&
-        (scene != PD_GFX_SCENE_SOLAR_SYSTEM ||
-         d->previous_scene != PD_GFX_SCENE_SOLAR_SYSTEM)) {
-        /* The solar sky stays intact between frames; avoid rewriting its
-         * title when only a small planet tile needs updating. */
-        status = d->screen.text(d->screen.ctx,4U,4U,
+    if (scene==PD_GFX_SCENE_SOLAR_SYSTEM) {
+        status=pd_gfx_demo_solar_frame(
+            d,now_ms,d->previous_scene!=PD_GFX_SCENE_SOLAR_SYSTEM);
+        if (status==PD_OK && d->screen.text!=NULL &&
+            d->previous_scene!=PD_GFX_SCENE_SOLAR_SYSTEM)
+            status=d->screen.text(d->screen.ctx,4U,4U,
                  pd_gfx_demo_scene_name(scene),GFX_FOREGROUND,GFX_BACKGROUND);
+    } else {
+        d->solar_ready=false;
+        status=render_incremental(d,scene,now_ms);
     }
-    if (status != PD_OK) {
+    if (status!=PD_OK) {
         pd_gfx_demo_invalidate(d);
         return status;
     }
-    d->previous_scene = scene;
+    d->previous_scene=scene;
     return PD_OK;
 }
