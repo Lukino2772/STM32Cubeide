@@ -10,6 +10,17 @@
 #define PD_GFX_DEMO_MIN_SCRATCH_PIXELS (121U) /* one 11x11 solar tile */
 #define PD_GFX_DEMO_MAX_DIMENSION (480U)
 #define PD_GFX_DEMO_PLANETS (8U)
+/* Fixed 11x11 dirty tiles: at most 44x44 tiles on a 480x480 panel. */
+#define PD_GFX_DEMO_TILE_SIZE (11U)
+#define PD_GFX_DEMO_TILE_WORDS (61U)
+/* Fast-path optional caller-owned command array: 352 entries cover every
+ * built-in scene, including the 320-edge torus. No heap or framebuffer. */
+#define PD_GFX_DEMO_FAST_COMMANDS (352U)
+typedef struct {
+    int16_t x0, y0, x1, y1; /* inclusive ends; fill stores opposite corners */
+    uint16_t color;
+    uint8_t kind; /* 0=line, 1=filled rectangle */
+} pd_gfx_command_t;
 
 typedef struct {
     void *ctx;
@@ -65,6 +76,11 @@ typedef struct {
     uint16_t solar_speed_q8; /* 256 = 1x */
     pd_gfx_scene_t previous_scene;
     bool initialized, solar_ready;
+    pd_gfx_command_t *commands; /* optional external acceleration storage */
+    size_t command_capacity;
+    uint32_t occupied[PD_GFX_DEMO_TILE_WORDS];
+    uint32_t last_geometry_hash;
+    size_t last_command_count;
 } pd_gfx_demo_t;
 
 /* No allocation. Supply >=121 RGB565 pixels of caller-owned scratch.
@@ -74,6 +90,12 @@ pd_status_t pd_gfx_demo_init(pd_gfx_demo_t *demo,
                              const pd_gfx_display_t *screen,
                              uint16_t *scratch, size_t scratch_pixels);
 void pd_gfx_demo_invalidate(pd_gfx_demo_t *demo);
+/* Optional fast path. Supply a separate static array of >=352 commands to
+ * avoid recalculating geometry per dirty tile. Smaller arrays are safe: the
+ * renderer automatically falls back to a slower, low-RAM path on overflow.
+ * Never overlap commands with scratch; keep storage alive across renders. */
+pd_status_t pd_gfx_demo_set_command_cache(pd_gfx_demo_t *demo,
+    pd_gfx_command_t *commands, size_t capacity);
 pd_status_t pd_gfx_demo_set_solar_speed(pd_gfx_demo_t *demo,
                                        uint16_t speed_q8); /* 0..4096 */
 const char *pd_gfx_demo_scene_name(pd_gfx_scene_t scene);
