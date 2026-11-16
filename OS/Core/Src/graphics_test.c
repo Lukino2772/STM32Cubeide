@@ -8,6 +8,7 @@
 
 static pd_gfx_demo_t gfx_demo;
 static uint16_t gfx_scratch[PD_GFX_DEMO_MIN_SCRATCH_PIXELS];
+static pd_gfx_bench_result_t gfx_benchmark_result;
 
 static const uint8_t font_letters[26][5] = {
     {0x7E,0x11,0x11,0x11,0x7E}, /* A */
@@ -210,9 +211,6 @@ void GraphicsTest_Run(void)
         } while ((uint32_t)(HAL_GetTick() - scene_start) < 1400U);
     }
 
-    status = pd_gfx_benchmark_run(&gfx_display,
-                                 (pd_gfx_bench_result_t *)&gfx_scratch[0]);
-    /* The benchmark result structure is larger than the solar scratch buffer.
-     * Use a dedicated object instead; this cast is never used. */
+    status = pd_gfx_benchmark_run(&gfx_display, &gfx_benchmark_result);
     if (status != PD_OK) show_error(status);
 }
