@@ -140,33 +140,42 @@ static void DrawText(uint16_t x, uint16_t y, const char *str,
 
 static void DrawGrid(void)
 {
-    LCD_FillRectangle(
-        GRAPH_X, GRAPH_Y,
-        GRAPH_W, GRAPH_H,
-        C_BG
-    );
-
-    for (uint8_t i = 0; i <= 10; i++)
+    for (uint16_t y = 0; y < GRAPH_H; ++y)
     {
-        uint16_t x = GRAPH_X + i * (GRAPH_W - 1) / 10;
+        uint8_t horizontal_grid = 0U;
+        for (uint8_t gy = 0; gy <= 6U; ++gy)
+        {
+            if (y == (uint16_t)(gy * (GRAPH_H - 1U) / 6U))
+            {
+                horizontal_grid = 1U;
+                break;
+            }
+        }
 
-        for (uint16_t y = GRAPH_Y; y < GRAPH_Y + GRAPH_H; y += 4)
-            LCD_DrawPixel(x, y, C_GRID);
+        for (uint16_t x = 0; x < GRAPH_W; ++x)
+        {
+            uint16_t color = C_BG;
+            for (uint8_t gx = 0; gx <= 10U; ++gx)
+            {
+                if (x == (uint16_t)(gx * (GRAPH_W - 1U) / 10U) &&
+                    (y & 3U) == 0U)
+                {
+                    color = C_GRID;
+                    break;
+                }
+            }
+
+            if (horizontal_grid && (x & 3U) == 0U)
+                color = C_GRID;
+            if (y == GRAPH_H / 2U && (x % 3U) == 0U)
+                color = C_MUTED;
+
+            graph_frame[(uint32_t)y * GRAPH_W + x] = color;
+        }
     }
 
-    for (uint8_t i = 0; i <= 6; i++)
-    {
-        uint16_t y = GRAPH_Y + i * (GRAPH_H - 1) / 6;
-
-        for (uint16_t x = GRAPH_X; x < GRAPH_X + GRAPH_W; x += 4)
-            LCD_DrawPixel(x, y, C_GRID);
-    }
-
-    /* Center reference line */
-    for (uint16_t x = GRAPH_X; x < GRAPH_X + GRAPH_W; x += 3)
-        LCD_DrawPixel(x, GRAPH_Y + GRAPH_H / 2, C_MUTED);
+    LCD_BlitRGB565(GRAPH_X, GRAPH_Y, GRAPH_W, GRAPH_H, graph_frame);
 }
-
 static void DrawInterface(void)
 {
     LCD_FillScreen(C_BG);
@@ -187,15 +196,11 @@ static void DrawInterface(void)
 
     DrawGrid();
 
-    /* Graph frame */
-    DrawLine(GRAPH_X - 1, GRAPH_Y - 1,
-             GRAPH_X + GRAPH_W, GRAPH_Y - 1, C_MUTED);
-    DrawLine(GRAPH_X - 1, GRAPH_Y + GRAPH_H,
-             GRAPH_X + GRAPH_W, GRAPH_Y + GRAPH_H, C_MUTED);
-    DrawLine(GRAPH_X - 1, GRAPH_Y - 1,
-             GRAPH_X - 1, GRAPH_Y + GRAPH_H, C_MUTED);
-    DrawLine(GRAPH_X + GRAPH_W, GRAPH_Y - 1,
-             GRAPH_X + GRAPH_W, GRAPH_Y + GRAPH_H, C_MUTED);
+    /* Graph frame: four filled strips instead of hundreds of pixel writes. */
+    LCD_FillRectangle(GRAPH_X - 1, GRAPH_Y - 1, GRAPH_W + 2, 1, C_MUTED);
+    LCD_FillRectangle(GRAPH_X - 1, GRAPH_Y + GRAPH_H, GRAPH_W + 2, 1, C_MUTED);
+    LCD_FillRectangle(GRAPH_X - 1, GRAPH_Y - 1, 1, GRAPH_H + 2, C_MUTED);
+    LCD_FillRectangle(GRAPH_X + GRAPH_W, GRAPH_Y - 1, 1, GRAPH_H + 2, C_MUTED);
 
     /* Measurement cards */
     LCD_FillRectangle(8, 188, 108, 48, C_PANEL);
