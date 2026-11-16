@@ -49,7 +49,7 @@ TIM_HandleTypeDef htim2;
 SPI_HandleTypeDef hspi2;
 
 /* USER CODE BEGIN PV */
-
+volatile TouchGesture g_last_touch_gesture = TOUCH_NONE;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,7 +118,8 @@ int main(void)
       TouchGesture gesture = Touch_GetGesture();
       if (gesture != TOUCH_NONE)
       {
-        /* Inspect gesture in the debugger or connect it to scope controls. */
+        g_last_touch_gesture = gesture;
+        /* Scope controls can consume this event in the next integration step. */
       }
       Scope_Update();
   }
