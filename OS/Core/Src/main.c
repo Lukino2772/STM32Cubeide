@@ -23,7 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "scope.h"
-#include "touch.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -48,7 +48,7 @@ DMA_HandleTypeDef hdma_adc1;
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-volatile TouchGesture g_last_touch_gesture = TOUCH_NONE;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -100,7 +100,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   LCD_Init();
-  Touch_Init();
+  Encoder_Init();
   Scope_Init();
 
   /* USER CODE END 2 */
@@ -112,41 +112,43 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-      TouchGesture gesture = Touch_GetGesture();
-      if (gesture != TOUCH_NONE)
+      static uint8_t encoder_mode = 0U;
+      int8_t encoder_delta = Encoder_GetDelta();
+      EncoderButtonEvent button_event = Encoder_GetButtonEvent();
+
+      /* Short press selects the setting controlled by rotation. */
+      if (button_event == ENCODER_BUTTON_SHORT)
       {
-        g_last_touch_gesture = gesture;
+        encoder_mode++;
+        if (encoder_mode >= 3U)
+          encoder_mode = 0U;
+      }
+      else if (button_event == ENCODER_BUTTON_LONG)
+      {
+        Scope_AutoSetup();
+      }
 
-        switch (gesture)
+      if (encoder_delta != 0)
+      {
+        switch (encoder_mode)
         {
-          case TOUCH_SWIPE_LEFT:
-            Scope_AdjustValue(-1);
+          case 0U: /* Vertical position */
+            Scope_AdjustValue(encoder_delta);
             break;
 
-          case TOUCH_SWIPE_RIGHT:
-            Scope_AdjustValue(1);
+          case 1U: /* Timebase */
+            Scope_ChangeTimebase(encoder_delta);
             break;
 
-          case TOUCH_SWIPE_UP:
-            Scope_ChangeTimebase(1);
-            break;
-
-          case TOUCH_SWIPE_DOWN:
-            Scope_ChangeVoltageScale(1);
-            break;
-
-          case TOUCH_TAP:
-            Scope_TogglePause();
-            break;
-
-          case TOUCH_LONG_PRESS:
-            Scope_AutoSetup();
+          case 2U: /* Voltage scale */
+            Scope_ChangeVoltageScale(encoder_delta);
             break;
 
           default:
             break;
         }
       }
+
       Scope_Update();
   }
   /* USER CODE END 3 */
