@@ -93,9 +93,11 @@ int main(void)
 static void Display_WriteSegments(uint8_t segments)
 {
     /* PA1=A ... PA7=G, PA8=DP. Common cathodes are permanently at GND. */
-    uint16_t output = (uint16_t)((segments & 0xFFU) << 1);
-    HAL_GPIO_WritePin(DISPLAY_GPIO_PORT, DISPLAY_GPIO_PINS,
-                      (uint16_t)(output & DISPLAY_GPIO_PINS));
+    uint16_t output = (uint16_t)(((uint16_t)segments << 1) & DISPLAY_GPIO_PINS);
+    HAL_GPIO_WritePin(DISPLAY_GPIO_PORT, DISPLAY_GPIO_PINS, GPIO_PIN_RESET);
+    if (output != 0U) {
+        HAL_GPIO_WritePin(DISPLAY_GPIO_PORT, output, GPIO_PIN_SET);
+    }
 }
 
 static void Display_ShowDigit(uint8_t digit)
