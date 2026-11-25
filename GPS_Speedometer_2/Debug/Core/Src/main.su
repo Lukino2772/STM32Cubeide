@@ -1,0 +1,12 @@
+../Core/Src/main.c:67:5:main	16	static
+../Core/Src/main.c:93:13:Display_WriteSegments	24	static
+../Core/Src/main.c:103:13:Display_ShowDigit	16	static
+../Core/Src/main.c:112:13:Display_RunIntro	16	static
+../Core/Src/main.c:134:13:GPS_ProcessLine	72	static
+../Core/Src/main.c:172:13:GPS_ProcessPendingLine	144	static,ignoring_inline_asm
+../Core/Src/main.c:196:13:Application_UpdateDisplay	16	static
+../Core/Src/main.c:251:6:HAL_UART_RxCpltCallback	24	static
+../Core/Src/main.c:280:13:SystemClock_Config	72	static
+../Core/Src/main.c:308:13:MX_USART1_UART_Init	8	static
+../Core/Src/main.c:324:13:MX_GPIO_Init	32	static
+../Core/Src/main.c:339:6:Error_Handler	4	static,ignoring_inline_asm
