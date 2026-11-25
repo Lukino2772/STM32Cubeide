@@ -53,6 +53,6 @@ UART reception is interrupt-driven one byte at a time. The callback only collect
 
 ## Build
 
-Open `GPS_Speedometer.ioc` in STM32CubeIDE/CubeMX, verify the pinout above, generate code if needed, then build the project. Do not regenerate code from a stale .ioc copy.
+Open the project in STM32CubeIDE and build it. The `.ioc` pinout has been updated for reference and future CubeMX configuration. **Do not click Generate Code over this implementation without first backing up `Core/Src/main.c` and `Core/Src/stm32f1xx_hal_msp.c`**; those files contain application code outside the usual generated USER CODE regions and regeneration could replace it.
 
-The GitHub update has not been compiled on the user's local STM32CubeIDE toolchain; build and test on the target board before relying on it.
+This GitHub update has not been compiled in an STM32CubeIDE toolchain or tested on the physical board. Build locally and test with the display and GPS module before relying on it.
