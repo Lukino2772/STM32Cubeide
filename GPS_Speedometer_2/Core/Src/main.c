@@ -111,41 +111,47 @@ static void Display_ShowDigit(uint8_t digit)
 
 static void Display_RunIntro(void)
 {
-    /* A-B-C-D-E-F gives an approximate circular chase on a 7-segment digit. */
-    static const uint8_t chase[] = {
-        SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F
-    };
+    /*
+     * Whole-display circle animation:
+     * Turn on all six outer segments together (the digit "0") on every
+     * display position, then pulse the complete ring as one animation.
+     * No individual segment chase is used.
+     *
+     * Since all four common cathodes are tied to GND, the same ring appears
+     * on all four digits simultaneously.
+     */
+    const uint8_t circle = SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F;
 
-    for (uint8_t round = 0; round < 2U; ++round) {
-        for (uint8_t i = 0; i < (uint8_t)(sizeof(chase) / sizeof(chase[0])); ++i) {
-            Display_WriteSegments(chase[i]);
-            HAL_Delay(90U);
-        }
-    }
-
-    for (uint8_t i = 0; i < 3U; ++i) {
-        Display_WriteSegments(ALL_SEGMENTS);
-        HAL_Delay(100U);
+    for (uint8_t pulse = 0; pulse < 3U; ++pulse) {
+        Display_WriteSegments(circle);
+        HAL_Delay(260U);
         Display_WriteSegments(0U);
-        HAL_Delay(100U);
+        HAL_Delay(140U);
     }
+
+    /* Leave the complete circle visible briefly before GPS searching. */
+    Display_WriteSegments(circle);
+    HAL_Delay(500U);
+    Display_WriteSegments(0U);
 }
 
 static void GPS_ProcessLine(char *line)
 {
     char *fields[10];
-    uint8_t field_count = 0;
-    char *token;
+    uint8_t field_count = 1U;
 
     if ((strncmp(line, "$GPRMC", 6U) != 0) &&
         (strncmp(line, "$GNRMC", 6U) != 0)) {
         return;
     }
 
-    token = strtok(line, ",");
-    while ((token != NULL) && (field_count < 10U)) {
-        fields[field_count++] = token;
-        token = strtok(NULL, ",");
+    /* Split manually so empty NMEA fields keep their correct field numbers. */
+    fields[0] = line;
+    for (char *p = line; (*p != '\0') && (field_count < 10U); ++p) {
+        if (*p == ',') {
+            *p = '\0';
+            fields[field_count++] = p + 1;
+        }
     }
 
     /* RMC fields: 0=type, 1=time, 2=status, 7=speed in knots. */
