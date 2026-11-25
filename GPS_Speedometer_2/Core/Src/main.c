@@ -134,18 +134,20 @@ static void Display_RunIntro(void)
 static void GPS_ProcessLine(char *line)
 {
     char *fields[10];
-    uint8_t field_count = 0;
-    char *token;
+    uint8_t field_count = 1U;
 
     if ((strncmp(line, "$GPRMC", 6U) != 0) &&
         (strncmp(line, "$GNRMC", 6U) != 0)) {
         return;
     }
 
-    token = strtok(line, ",");
-    while ((token != NULL) && (field_count < 10U)) {
-        fields[field_count++] = token;
-        token = strtok(NULL, ",");
+    /* Split manually so empty NMEA fields keep their correct field numbers. */
+    fields[0] = line;
+    for (char *p = line; (*p != '\0') && (field_count < 10U); ++p) {
+        if (*p == ',') {
+            *p = '\0';
+            fields[field_count++] = p + 1;
+        }
     }
 
     /* RMC fields: 0=type, 1=time, 2=status, 7=speed in knots. */
