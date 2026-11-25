@@ -26,7 +26,7 @@ UART_HandleTypeDef huart1;
 #define ALL_SEGMENTS            0x7FU
 #define GPS_LINE_LENGTH         128U
 #define GPS_TIMEOUT_MS          3000U
-#define SEARCH_STEP_MS          120U
+#define SEARCH_STEP_MS          450U
 #define LOST_BLINK_MS           500U
 #define SPEED_FLASH_MS          240U
 
@@ -204,7 +204,7 @@ static void Application_UpdateDisplay(void)
     static uint32_t last_animation_tick = 0;
     static uint32_t flash_started_tick = 0;
     static uint16_t previous_speed = 0xFFFFU;
-    static uint8_t search_index = 0;
+    static uint8_t search_circle_visible = 0;
     static uint8_t lost_visible = 0;
 
     const uint32_t now = HAL_GetTick();
@@ -232,16 +232,17 @@ static void Application_UpdateDisplay(void)
     }
 
     if (!gps_ever_fixed) {
-        /* Searching animation before the first valid GPS fix. */
-        static const uint8_t search_pattern[] = {
-            SEG_A, SEG_B, SEG_C, SEG_D, SEG_E, SEG_F
-        };
+        /*
+         * GPS searching animation: pulse the complete outer ring together.
+         * Do not chase individual segments.
+         */
+        const uint8_t circle = SEG_A | SEG_B | SEG_C |
+                               SEG_D | SEG_E | SEG_F;
 
         if ((uint32_t)(now - last_animation_tick) >= SEARCH_STEP_MS) {
             last_animation_tick = now;
-            Display_WriteSegments(search_pattern[search_index]);
-            search_index = (uint8_t)((search_index + 1U) %
-                         (sizeof(search_pattern) / sizeof(search_pattern[0])));
+            search_circle_visible = (uint8_t)!search_circle_visible;
+            Display_WriteSegments(search_circle_visible ? circle : 0U);
         }
         return;
     }
