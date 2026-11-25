@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "lcd.h"
 #include "scope.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -99,6 +100,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   LCD_Init();
+  Encoder_Init();
   Scope_Init();
 
   /* USER CODE END 2 */
@@ -110,6 +112,43 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+      static uint8_t encoder_mode = 0U;
+      int8_t encoder_delta = Encoder_GetDelta();
+      EncoderButtonEvent button_event = Encoder_GetButtonEvent();
+
+      /* Short press selects the setting controlled by rotation. */
+      if (button_event == ENCODER_BUTTON_SHORT)
+      {
+        encoder_mode++;
+        if (encoder_mode >= 3U)
+          encoder_mode = 0U;
+      }
+      else if (button_event == ENCODER_BUTTON_LONG)
+      {
+        Scope_AutoSetup();
+      }
+
+      if (encoder_delta != 0)
+      {
+        switch (encoder_mode)
+        {
+          case 0U: /* Vertical position */
+            Scope_AdjustValue(encoder_delta);
+            break;
+
+          case 1U: /* Timebase */
+            Scope_ChangeTimebase(encoder_delta);
+            break;
+
+          case 2U: /* Voltage scale */
+            Scope_ChangeVoltageScale(encoder_delta);
+            break;
+
+          default:
+            break;
+        }
+      }
+
       Scope_Update();
   }
   /* USER CODE END 3 */
@@ -160,6 +199,7 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
 
 /**
   * @brief ADC1 Initialization Function
