@@ -1,4 +1,4 @@
-../Core/edge-impulse-sdk/dsp/image/processing.cpp:52:5:int ei::image::processing::yuv422_to_rgb888(unsigned char*, const unsigned char*, unsigned int, YUV_OPTIONS)	12
+../Core/edge-impulse-sdk/dsp/image/processing.cpp:52:5:int ei::image::processing::yuv422_to_rgb888(unsigned char*, const unsigned char*, unsigned int, YUV_OPTIONS)	6
 ../Core/edge-impulse-sdk/dsp/image/processing.cpp:121:5:int ei::image::processing::cropImage(const uint8_t*, int, int, int, int, uint8_t*, int, int, int)	22
 ../Core/edge-impulse-sdk/dsp/image/processing.cpp:214:5:int ei::image::processing::crop_image_rgb888_packed(const uint8_t*, int, int, int, int, uint8_t*, int, int)	1
 ../Core/edge-impulse-sdk/dsp/image/processing.cpp:251:5:int ei::image::processing::resize_image(const uint8_t*, int, int, uint8_t*, int, int, int)	5

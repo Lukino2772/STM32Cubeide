@@ -1,44 +1,44 @@
 Core/edge-impulse-sdk/tensorflow/lite/micro/schema_utils.o: \
  ../Core/edge-impulse-sdk/tensorflow/lite/micro/schema_utils.cc \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_utils.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flatbuffers.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_array.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_base.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_stl_emulation.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer_ref.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_verifier.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_detached_buffer.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_allocator.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_default_allocator.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_flatbuffer_builder.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_string.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_struct.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_table.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector_downward.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/internal/compatibility.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/micro/debug_log.h
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_utils.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flatbuffers.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_array.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_base.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_stl_emulation.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer_ref.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_verifier.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_detached_buffer.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_allocator.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_default_allocator.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_flatbuffer_builder.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_string.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_struct.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_table.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector_downward.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/internal/compatibility.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/micro/debug_log.h:
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_utils.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flatbuffers.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_array.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_base.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_stl_emulation.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer_ref.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_verifier.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_detached_buffer.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_allocator.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_default_allocator.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_flatbuffer_builder.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_string.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_struct.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_table.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector_downward.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/internal/compatibility.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/micro/debug_log.h
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_utils.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/flatbuffers.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_array.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_base.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_stl_emulation.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_buffer_ref.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_verifier.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_detached_buffer.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_allocator.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_default_allocator.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_flatbuffer_builder.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_string.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_struct.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_table.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/third_party/flatbuffers/include/flatbuffers/fb_vector_downward.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/internal/compatibility.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/kernels/op_macros.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/tensorflow/lite/micro/debug_log.h:

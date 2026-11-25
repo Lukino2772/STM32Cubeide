@@ -1,7 +1,7 @@
 Core/edge-impulse-sdk/porting/stm32-cubeai/ei_classifier_porting.o: \
  ../Core/edge-impulse-sdk/porting/stm32-cubeai/ei_classifier_porting.cpp \
  ../Core/edge-impulse-sdk/porting/stm32-cubeai/../ei_classifier_porting.h \
- C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/dsp/returntypes.h \
+ C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/dsp/returntypes.h \
  ../Core/Inc/main.h ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  ../Core/Inc/stm32f4xx_hal_conf.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_rcc.h \
@@ -33,7 +33,7 @@ Core/edge-impulse-sdk/porting/stm32-cubeai/ei_classifier_porting.o: \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_ll_usb.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pcd_ex.h
 ../Core/edge-impulse-sdk/porting/stm32-cubeai/../ei_classifier_porting.h:
-C:/Users/Lukino/STM32CubeIDE/workspace_1.18.0/LS_4_AI/Core/edge-impulse-sdk/dsp/returntypes.h:
+C:/Users/Lukino/git/STM32Cubeide/LS_4_AI/Core/edge-impulse-sdk/dsp/returntypes.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
