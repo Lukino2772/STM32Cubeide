@@ -103,6 +103,7 @@ static void MX_TIM2_Init(void);
 static void Matrix_SetPixel(uint8_t x, uint8_t y, uint8_t on);
 static void Matrix_Clear(void);
 static void Matrix_Show(const uint8_t image[8]);
+static void Matrix_Diagnostic(void);
 static void Startup_Animation(void);
 static void Show_Menu(void);
 static void Start_Game(void);
@@ -130,8 +131,7 @@ int main(void)
         Error_Handler();
     }
 
-    Startup_Animation();
-    Show_Menu();
+    Matrix_Diagnostic();
 
     while (1) {
         uint32_t now = HAL_GetTick();
@@ -223,6 +223,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
     scanRow++;
     if (scanRow >= 8U) scanRow = 0U;
+}
+
+/* --------------------------- Matrix diagnostic ---------------------------- */
+/* Lights one pixel at a time in row-major order. This bypasses the joystick
+   and Snake logic so the physical row/column mapping can be observed. */
+static void Matrix_Diagnostic(void)
+{
+    while (1) {
+        for (uint8_t y = 0; y < 8; y++) {
+            for (uint8_t x = 0; x < 8; x++) {
+                Matrix_Clear();
+                Matrix_SetPixel(x, y, 1U);
+                HAL_Delay(500U);
+            }
+        }
+    }
 }
 
 /* ------------------------------ UI screens -------------------------------- */
