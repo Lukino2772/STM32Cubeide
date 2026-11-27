@@ -39,17 +39,29 @@ typedef struct {
 
 /* User-selected GPIO allocation. */
 static const MatrixPin rowPins[8] = {
-    {GPIOA, GPIO_PIN_0}, {GPIOA, GPIO_PIN_1},
-    {GPIOA, GPIO_PIN_2}, {GPIOA, GPIO_PIN_3},
-    {GPIOA, GPIO_PIN_4}, {GPIOA, GPIO_PIN_5},
-    {GPIOA, GPIO_PIN_6}, {GPIOA, GPIO_PIN_7}
+    /* 1588BS pinout remapped to the user's two existing wire groups.
+       Assumption: viewed from the LED front with the 1588BS text at the bottom,
+       top physical pin row is PA0..PA7 left-to-right; bottom row is
+       PB3,PB4,PB5,PB6,PB7,PB8,PB9,PA15 left-to-right. */
+    {GPIOA, GPIO_PIN_7},   /* R1 */
+    {GPIOA, GPIO_PIN_2},   /* R2 */
+    {GPIOA, GPIO_PIN_15},  /* R3 */
+    {GPIOA, GPIO_PIN_4},   /* R4 */
+    {GPIOB, GPIO_PIN_3},   /* R5 */
+    {GPIOB, GPIO_PIN_9},   /* R6 */
+    {GPIOB, GPIO_PIN_4},   /* R7 */
+    {GPIOB, GPIO_PIN_7}    /* R8 */
 };
 
 static const MatrixPin colPins[8] = {
-    {GPIOB, GPIO_PIN_3}, {GPIOB, GPIO_PIN_4},
-    {GPIOB, GPIO_PIN_5}, {GPIOB, GPIO_PIN_6},
-    {GPIOB, GPIO_PIN_7}, {GPIOB, GPIO_PIN_8},
-    {GPIOB, GPIO_PIN_9}, {GPIOA, GPIO_PIN_15}
+    {GPIOA, GPIO_PIN_3},   /* C1 */
+    {GPIOB, GPIO_PIN_5},   /* C2 */
+    {GPIOB, GPIO_PIN_6},   /* C3 */
+    {GPIOA, GPIO_PIN_6},   /* C4 */
+    {GPIOB, GPIO_PIN_8},   /* C5 */
+    {GPIOA, GPIO_PIN_5},   /* C6 */
+    {GPIOA, GPIO_PIN_1},   /* C7 */
+    {GPIOA, GPIO_PIN_0}    /* C8 */
 };
 
 /* Bit 7 is the leftmost pixel. Written by the game, scanned by TIM2 ISR. */
