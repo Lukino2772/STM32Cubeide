@@ -126,6 +126,16 @@ int main(void)
         Error_Handler();
     }
 
+    /* Diagnostic: illuminate all 64 pixels for 2 seconds.
+       The timer multiplexes the rows; current is limited by the
+       existing series resistors on the matrix lines. */
+    static const uint8_t allPixelsOn[8] = {
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+    };
+    Matrix_Show(allPixelsOn);
+    HAL_Delay(2000);
+    Matrix_Clear();
+
     Startup_Animation();
     Show_Menu();
 
