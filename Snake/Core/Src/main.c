@@ -127,7 +127,9 @@ int main(void)
         Error_Handler();
     }
 
-    Matrix_Diagnostic();
+    /* Start the game UI after the matrix scan timer is running. */
+    Startup_Animation();
+    Show_Menu();
 
     while (1) {
         uint32_t now = HAL_GetTick();
