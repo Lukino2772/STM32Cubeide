@@ -5,7 +5,7 @@
   *
   * Matrix wiring used by this project:
   *   Rows (common anodes): PA0..PA7
-  *   Columns (cathodes):   PB3..PB9, PA15
+  *   Columns (cathodes):   C8=PB9, C7=PB8, C6=PB7, C5=PB6, C4=PB5, C3=PB4, C2=PB3, C1=PA15
   *   Place one 1k resistor in series with EACH of the 8 cathode/column lines.
   *
   * Joystick:
@@ -50,14 +50,14 @@ static const MatrixPin rowPins[8] = {
 };
 
 static const MatrixPin colPins[8] = {
-    {GPIOB, GPIO_PIN_3}, /* C1 */
-    {GPIOB, GPIO_PIN_4}, /* C2 */
-    {GPIOB, GPIO_PIN_5}, /* C3 */
-    {GPIOB, GPIO_PIN_6}, /* C4 */
-    {GPIOB, GPIO_PIN_7}, /* C5 */
-    {GPIOB, GPIO_PIN_8}, /* C6 */
-    {GPIOB, GPIO_PIN_9}, /* C7 */
-    {GPIOA, GPIO_PIN_15} /* C8 */
+    {GPIOB, GPIO_PIN_9},  /* C8 */
+    {GPIOB, GPIO_PIN_8},  /* C7 */
+    {GPIOB, GPIO_PIN_7},  /* C6 */
+    {GPIOB, GPIO_PIN_6},  /* C5 */
+    {GPIOB, GPIO_PIN_5},  /* C4 */
+    {GPIOB, GPIO_PIN_4},  /* C3 */
+    {GPIOB, GPIO_PIN_3},  /* C2 */
+    {GPIOA, GPIO_PIN_15}  /* C1 */
 };
 
 /* Bit 7 is the leftmost pixel. Written by the game, scanned by TIM2 ISR. */
@@ -519,8 +519,8 @@ static void MX_GPIO_Init(void)
 
     /* Safe idle for common-anode matrix: rows LOW, cathode columns HIGH. */
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 |
-                      GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7 |
-                      GPIO_PIN_15, GPIO_PIN_RESET);
+                      GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 | GPIO_PIN_7, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, GPIO_PIN_SET);
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5 | GPIO_PIN_6 |
                       GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9, GPIO_PIN_SET);
 
