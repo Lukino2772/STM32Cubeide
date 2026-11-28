@@ -226,14 +226,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
    and Snake logic so the physical row/column mapping can be observed. */
 static void Matrix_Diagnostic(void)
 {
+    /* Display all 64 LEDs continuously.
+       TIM2 keeps multiplexing the eight rows in the background. */
+    static const uint8_t allOn[8] = {
+        0xFF, 0xFF, 0xFF, 0xFF,
+        0xFF, 0xFF, 0xFF, 0xFF
+    };
+
+    Matrix_Show(allOn);
+
+    /* Diagnostic mode: stay here so the full-matrix pattern remains visible. */
     while (1) {
-        for (uint8_t y = 0; y < 8; y++) {
-            for (uint8_t x = 0; x < 8; x++) {
-                Matrix_Clear();
-                Matrix_SetPixel(x, y, 1U);
-                HAL_Delay(500U);
-            }
-        }
+        HAL_Delay(100U);
     }
 }
 
