@@ -4,7 +4,7 @@
   * @brief   Snake game for STM32F411CEU6 + bare 1588BS 8x8 matrix.
   *
   * Matrix wiring used by this project:
-  *   Rows (common anodes): PA0..PA7
+  *   Rows (common anodes): R1=PA7, R2=PA6, R3=PA5, R4=PA4, R5=PA3, R6=PA2, R7=PA1, R8=PA0
   *   Columns (cathodes):   C8=PB9, C7=PB8, C6=PB7, C5=PB6, C4=PB5, C3=PB4, C2=PB3, C1=PA15
   *   Place one 1k resistor in series with EACH of the 8 cathode/column lines.
   *
@@ -39,14 +39,14 @@ typedef struct {
 
 /* User-selected GPIO allocation. */
 static const MatrixPin rowPins[8] = {
-    {GPIOA, GPIO_PIN_0}, /* R1 */
-    {GPIOA, GPIO_PIN_1}, /* R2 */
-    {GPIOA, GPIO_PIN_2}, /* R3 */
-    {GPIOA, GPIO_PIN_3}, /* R4 */
-    {GPIOA, GPIO_PIN_4}, /* R5 */
-    {GPIOA, GPIO_PIN_5}, /* R6 */
-    {GPIOA, GPIO_PIN_6}, /* R7 */
-    {GPIOA, GPIO_PIN_7}  /* R8 */
+    {GPIOA, GPIO_PIN_7}, /* R1 */
+    {GPIOA, GPIO_PIN_6}, /* R2 */
+    {GPIOA, GPIO_PIN_5}, /* R3 */
+    {GPIOA, GPIO_PIN_4}, /* R4 */
+    {GPIOA, GPIO_PIN_3}, /* R5 */
+    {GPIOA, GPIO_PIN_2}, /* R6 */
+    {GPIOA, GPIO_PIN_1}, /* R7 */
+    {GPIOA, GPIO_PIN_0}  /* R8 */
 };
 
 static const MatrixPin colPins[8] = {
